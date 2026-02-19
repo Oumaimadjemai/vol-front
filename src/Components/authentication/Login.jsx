@@ -2,10 +2,29 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import loginImage from "../../assets/images/login.png"
 import { FcGoogle } from "react-icons/fc";
+import msAuthInstance from "../../api/axiosInstance"
 
-export default function Login() {
+export default function Login({onLoginSuccess}) {
   const [showPassword, setShowPassword] = useState(false);
-
+  const [identifier, setIdentifier]=useState("");
+  const [password,setPassword]=useState("");
+  const [error,setError]=useState("");
+  const handleLogin = async()=>{
+    try{
+      const response = await msAuthInstance.post("login/",{
+        identifier,
+        password,
+      });
+      console.log("login success",response)
+      localStorage.setItem("access_token",response.data.access);
+      localStorage.setItem("refresh_token",response.data.refresh);
+      localStorage.setItem("role", response.data.role);
+      localStorage.setItem("voyageur", JSON.stringify(response.data.voyageur));
+      onLoginSuccess();
+    } catch(err){
+      setError("Email ou mot de passe incorrect");
+    }
+  }
   return (
     <div className="h-auto flex ">
 
@@ -33,6 +52,8 @@ export default function Login() {
             <label className="block text-sm mb-1">E-mail</label>
             <input
               type="email"
+              value={identifier}
+              onChange={(e)=>setIdentifier(e.target.value)}
               placeholder="exemple@gmail.com"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00C0E8]"
             />
@@ -46,6 +67,8 @@ export default function Login() {
 
             <input
               type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e)=>setPassword(e.target.value)}
               placeholder="**********"
               className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-[#00C0E8]"
             />
@@ -64,7 +87,9 @@ export default function Login() {
             </a>
           </div>
 
-          <button className="w-full bg-[#00C0E8] text-white py-2 rounded-3xl hover:bg-sky-500 transition font-medium ">
+          <button 
+          onClick={handleLogin}
+          className="w-full bg-[#00C0E8] text-white py-2 rounded-3xl hover:bg-sky-500 transition font-medium ">
             Connexion
           </button>
 

@@ -51,7 +51,6 @@ export default function Signup() {
           <div className="flex-1">
             <label className="block text-sm mb-1">N°de telephone</label>
             <input
-              type="phonenumber"
               placeholder="0555555555"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00C0E8]"
             />
