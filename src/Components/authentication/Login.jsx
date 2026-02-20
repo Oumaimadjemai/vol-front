@@ -1,34 +1,36 @@
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import loginImage from "../../assets/images/login.png"
+import loginImage from "../../assets/images/login.png";
 import { FcGoogle } from "react-icons/fc";
-import msAuthInstance from "../../api/axiosInstance"
+import msAuthInstance from "../../api/axiosInstance";
 
-export default function Login({onLoginSuccess}) {
+export default function Login({ onLoginSuccess, onSwitchToSignup }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [identifier, setIdentifier]=useState("");
-  const [password,setPassword]=useState("");
-  const [error,setError]=useState("");
-  const handleLogin = async()=>{
-    try{
-      const response = await msAuthInstance.post("login/",{
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const handleLogin = async () => {
+    try {
+      const response = await msAuthInstance.post("login/", {
         identifier,
         password,
       });
-      console.log("login success",response)
-      localStorage.setItem("access_token",response.data.access);
-      localStorage.setItem("refresh_token",response.data.refresh);
+      console.log("login success", response);
+      localStorage.setItem("access_token", response.data.access);
+      localStorage.setItem("refresh_token", response.data.refresh);
       localStorage.setItem("role", response.data.role);
       localStorage.setItem("voyageur", JSON.stringify(response.data.voyageur));
       onLoginSuccess();
-    } catch(err){
+    } catch (err) {
       setError("Email ou mot de passe incorrect");
     }
-  }
+  };
+   const handleGoogleLogin = () => {
+  window.location.href =
+    "http://localhost:8000/auth/accounts/google/login/?process=signup";
+};
   return (
     <div className="h-auto flex ">
-
-      
       <div className="hidden md:flex md:w-1/2">
         <img
           src={loginImage}
@@ -37,38 +39,32 @@ export default function Login({onLoginSuccess}) {
         />
       </div>
 
-     
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-8  ">
         <div className="w-full max-w-sm  self-start mt-0">
-
           <p className="text-sm text-gray-600  mb-1">Bienvenue</p>
 
           <h2 className="text-2xl font-bold mb-3 font-playfair">
             Connectez-vous à votre compte
           </h2>
 
-          
           <div className="mb-2">
             <label className="block text-sm mb-1">E-mail</label>
             <input
               type="email"
               value={identifier}
-              onChange={(e)=>setIdentifier(e.target.value)}
+              onChange={(e) => setIdentifier(e.target.value)}
               placeholder="exemple@gmail.com"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#00C0E8]"
             />
           </div>
 
-          
           <div className="mb-2 relative">
-            <label className="block text-sm mb-1">
-              Mot de passe
-            </label>
+            <label className="block text-sm mb-1">Mot de passe</label>
 
             <input
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e)=>setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="**********"
               className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-[#00C0E8]"
             />
@@ -87,9 +83,10 @@ export default function Login({onLoginSuccess}) {
             </a>
           </div>
 
-          <button 
-          onClick={handleLogin}
-          className="w-full bg-[#00C0E8] text-white py-2 rounded-3xl hover:bg-sky-500 transition font-medium ">
+          <button
+            onClick={handleLogin}
+            className="w-full bg-[#00C0E8] text-white py-2 rounded-3xl hover:bg-sky-500 transition font-medium "
+          >
             Connexion
           </button>
 
@@ -100,24 +97,25 @@ export default function Login({onLoginSuccess}) {
             <div className="flex-grow h-px bg-gray-300"></div>
           </div>
 
-          <button className="w-full border border-gray-300 py-2 rounded-3xl bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center space-x-2">
+          <button 
+          onClick={handleGoogleLogin}
+          className="w-full border border-gray-300 py-2 rounded-3xl bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center space-x-2">
             <FcGoogle className="w-5 h-5" />
-  <span>Continuer avec Google</span>
+            <span>Continuer avec Google</span>
           </button>
 
           <p className="text-sm text-center mt-6 ">
             Vous n'avez pas un compte ?{" "}
-            <a
-              href="/signup"
+            <button
+              type="button"
+              onClick={onSwitchToSignup}
               className="text-[#00C0E8] font-medium hover:underline"
             >
               Inscrivez-vous
-            </a>
+            </button>
           </p>
-
         </div>
       </div>
-
     </div>
   );
 }

@@ -26,9 +26,39 @@ export default function Navbar() {
   }
 }, []);
   const handleLoginSuccess = () => {
+     const voyageur = localStorage.getItem("voyageur");
+
+  if (voyageur) {
+    const user = JSON.parse(voyageur);
+    const firstLetterNom = user.nom?.charAt(0).toUpperCase() || "";
+    const firstLetterPrenom = user.prenom?.charAt(0).toUpperCase() || "";
+    setInitials(firstLetterNom + firstLetterPrenom);
+  }
     setIsAuthenticated(true);
     setIsLoginOpen(false);
   };
+  const handleSignupSuccess = () => {
+  const voyageur = localStorage.getItem("voyageur");
+
+  if (voyageur) {
+    const user = JSON.parse(voyageur);
+    const firstLetterNom = user.nom?.charAt(0).toUpperCase() || "";
+    const firstLetterPrenom = user.prenom?.charAt(0).toUpperCase() || "";
+    setInitials(firstLetterNom + firstLetterPrenom);
+  }
+
+  setIsAuthenticated(true);
+  setIsSignupOpen(false);
+};
+  const handleSwitchToSignup = () => {
+  setIsLoginOpen(false);
+  setIsSignupOpen(true);
+};
+  const handleSwitchToSignIn = () => {
+    setIsSignupOpen(false);
+  setIsLoginOpen(true);
+  
+};
   return (
     <>
       <nav className="bg-white shadow-md">
@@ -92,7 +122,7 @@ export default function Navbar() {
         }}
       >
         <div className="relative">
-          <Login onLoginSuccess={handleLoginSuccess} />
+          <Login onLoginSuccess={handleLoginSuccess} onSwitchToSignup={handleSwitchToSignup} />
         </div>
       </Dialog>
       <Dialog
@@ -115,7 +145,7 @@ export default function Navbar() {
         }}
       >
         <div className="relative">
-          <Signup />
+          <Signup onSwitchToSignin={handleSwitchToSignIn} onSignupSuccess={handleSignupSuccess}/>
         </div>
       </Dialog>
     </>
