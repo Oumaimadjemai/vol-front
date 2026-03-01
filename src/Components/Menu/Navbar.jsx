@@ -3,15 +3,18 @@ import { NavLink, useNavigate } from "react-router-dom";
 import Login from "../authentication/Login";
 import Dialog from "@mui/material/Dialog";
 import Signup from "../authentication/Signup";
+
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
 import Avatar from "@mui/material/Avatar";
+import ForgotPassword from "../authentication/ResetPassword";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false); // State for forgot password
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [initials, setInitials] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
@@ -92,6 +95,18 @@ export default function Navbar() {
     console.log("Navbar - Signup success");
     updateAuthState();
     setIsSignupOpen(false);
+  };
+  
+  // Handler to open forgot password dialog
+  const handleForgotPassword = () => {
+    setIsLoginOpen(false); // Close login dialog
+    setIsResetOpen(true); // Open forgot password dialog
+  };
+
+  // Handler to go back to login from forgot password
+  const handleBackToLogin = () => {
+    setIsResetOpen(false);
+    setIsLoginOpen(true);
   };
 
   const handleSwitchToSignup = () => {
@@ -207,6 +222,7 @@ export default function Navbar() {
         </div>
       </nav>
 
+      {/* Login Dialog */}
       <Dialog
         open={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
@@ -229,11 +245,13 @@ export default function Navbar() {
         <div className="relative">
           <Login 
             onLoginSuccess={handleLoginSuccess} 
-            onSwitchToSignup={handleSwitchToSignup} 
+            onSwitchToSignup={handleSwitchToSignup}
+            onSwitchToReset={handleForgotPassword} // Pass the handler
           />
         </div>
       </Dialog>
       
+      {/* Signup Dialog */}
       <Dialog
         open={isSignupOpen}
         onClose={() => setIsSignupOpen(false)}
@@ -259,6 +277,32 @@ export default function Navbar() {
             onSignupSuccess={handleSignupSuccess}
           />
         </div>
+      </Dialog>
+
+      {/* Forgot Password Dialog */}
+      <Dialog
+        open={isResetOpen}
+        onClose={() => setIsResetOpen(false)}
+        maxWidth="sm"
+        disableScrollLock
+        PaperProps={{
+          style: {
+            boxShadow: "none",
+            overflow: "hidden",
+            margin: 0,
+            width: "100%",
+            maxWidth: "450px",
+            backgroundColor: "white",
+            borderRadius: "16px",
+            position: "relative",
+          },
+        }}
+      >
+        <ForgotPassword
+          onBackToLogin={handleBackToLogin}
+          onSwitchToLogin={handleBackToLogin}
+          handleBackToLogin={handleBackToLogin}
+        />
       </Dialog>
     </>
   );
