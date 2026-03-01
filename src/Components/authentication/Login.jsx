@@ -3,12 +3,14 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import loginImage from "../../assets/images/login.png";
 import { FcGoogle } from "react-icons/fc";
 import msAuthInstance from "../../api/axiosInstance";
+import { useNavigate } from "react-router-dom";
 
-export default function Login({ onLoginSuccess, onSwitchToSignup }) {
+export default function Login({ onLoginSuccess, onSwitchToSignup,onSwitchToReset }) {
   const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+   const navigate = useNavigate();
   const handleLogin = async () => {
     try {
       const response = await msAuthInstance.post("login/", {
@@ -77,11 +79,20 @@ export default function Login({ onLoginSuccess, onSwitchToSignup }) {
             </span>
           </div>
 
-          <div className="text-right mb-2">
-            <a href="#" className="text-sm text-[#00C0E8] hover:underline">
-              Mot de passe oublié ?
-            </a>
-          </div>
+         <div className="text-right mb-2">
+  <button
+     onClick={() => {
+          if (onSwitchToReset) {
+            onSwitchToReset(); // For modal
+          } else {
+            navigate("/forgot-password"); // For page navigation
+          }
+        }} // Use the passed handler
+    className="text-sm text-[#00C0E8] hover:underline"
+  >
+    Mot de passe oublié ?
+  </button>
+</div>
 
           <button
             onClick={handleLogin}
