@@ -5,6 +5,7 @@ import Signup from "../Components/authentication/Signup";
 import Home from "../Components/pages/Home";
 import ForgotPassword from "../Components/authentication/ResetPassword";
 import ResetPassword from "../Components/authentication/ConfirmPassword";
+import NotFound from "../Components/pages/NotFound";
 
 
 export default function AppRoutes() {
@@ -16,6 +17,7 @@ export default function AppRoutes() {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/forgot-password" element={<ForgotPassword/>}/>
       <Route path='/reset-password/:uid/:token/' element={<ResetPassword/>}/>
+      <Route path="*" element={<NotFound/>}/>
     </Routes>
   );
 }
