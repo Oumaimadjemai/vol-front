@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const msAuthInstance = axios.create({
-  baseURL: 'http://localhost:8000/auth',  // Votre backend Django
+  baseURL: 'http://localhost:8080/',  // Votre backend Django
 });
 
 // Intercepteur pour ajouter le token aux requêtes

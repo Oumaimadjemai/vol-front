@@ -29,8 +29,8 @@ export default function ResetPassword() {
     
     setLoading(true);
     try {
-      // Call the password reset confirm endpoint
-      const response = await msAuthInstance.post("password-reset/confirm/", {
+      
+      const response = await msAuthInstance.post("auth-service/auth/password-reset/confirm/", {
         uid,
         token,
         password,
@@ -40,7 +40,7 @@ export default function ResetPassword() {
       console.log("Password reset successful:", response.data);
       setSuccess(true);
       
-      // Redirect to login after 3 seconds
+      
       setTimeout(() => {
         navigate("/");
       }, 3000);
@@ -48,7 +48,7 @@ export default function ResetPassword() {
     } catch (err) {
       console.error("Reset error:", err.response?.data);
       
-      // Handle specific error messages
+      
       if (err.response?.status === 400) {
         setError(err.response?.data?.message || "Lien invalide ou expiré");
       } else {
