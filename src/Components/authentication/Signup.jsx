@@ -12,25 +12,10 @@ export default function Signup({onSwitchToSignin,onSignupSuccess}) {
   const [prenom,setPrenom]=useState("");
   const [telephone,setTelephone]=useState("");
 
-  // const handleSignup = async()=>{
-  //   try{
-  //     const response= await msAuthInstance.post("signup/",{
-  //       nom,
-  //       prenom,
-  //       email,
-  //       password,
-  //       telephone
-  //     });
-  //     console.log(response)
-  //     onSignupSuccess();
-  //   }catch (err){
-  //     console.log("ERROR RESPONSE:", err.response?.data);
-  //   }
-  // }
  const handleSignup = async () => {
   try {
     // 1️⃣ Create account
-    await msAuthInstance.post("signup/", {
+    await msAuthInstance.post("auth-service/auth/signup/", {
       nom,
       prenom,
       email,
@@ -39,7 +24,7 @@ export default function Signup({onSwitchToSignin,onSignupSuccess}) {
     });
 
     // 2️⃣ Auto login after signup
-    const loginResponse = await msAuthInstance.post("login/", {
+    const loginResponse = await msAuthInstance.post("auth-service/auth/login/", {
       identifier: email,
       password,
     });

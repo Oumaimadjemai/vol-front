@@ -23,7 +23,7 @@ export default function ForgotPassword({
     setLoading(true);
     try {
       // Call the password reset endpoint
-      const response = await msAuthInstance.post("password-reset/", { email });
+      const response = await msAuthInstance.post("auth-service/auth/password-reset/", { email });
       console.log("Reset email sent:", response.data);
       setIsSubmitted(true);
       setError("");
@@ -58,7 +58,7 @@ export default function ForgotPassword({
   return (
     <div className=" flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
-        {/* Back to login link */}
+        
         <button
           onClick={onBackToLogin || onSwitchToLogin}
           className="flex items-center text-gray-500 hover:text-[#00C0E8] transition-colors mb-2 group"
@@ -69,7 +69,7 @@ export default function ForgotPassword({
 
         {!isSubmitted ? (
           <>
-            {/* Header */}
+           
             <div className="text-center">
               {" "}
               <div className="mt-4 flex justify-center">
@@ -89,9 +89,9 @@ export default function ForgotPassword({
               </p>
             </div>
 
-            {/* Form */}
+           
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email field */}
+             
               <div>
                 <label
                   htmlFor="email"
@@ -121,7 +121,7 @@ export default function ForgotPassword({
                 {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
               </div>
 
-              {/* Submit button */}
+              
                <button
                 type="submit"
                 disabled={loading}
@@ -180,7 +180,7 @@ export default function ForgotPassword({
           </div>
         )}
 
-        {/* Remember password link */}
+      
         {!isSubmitted && (
           <p className="mt-6 text-center text-sm text-gray-600">
             Vous vous souvenez de votre mot de passe ?{" "}
