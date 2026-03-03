@@ -26,6 +26,7 @@ export default function Navbar() {
   const langOpen = Boolean(langAnchorEl);
   
   const open = Boolean(anchorEl);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Function to update auth state from localStorage
   const updateAuthState = () => {
@@ -190,7 +191,7 @@ export default function Navbar() {
           <div className="hidden md:flex space-x-6 absolute left-1/2 transform -translate-x-1/2">
             <NavItem to="/#hero">Accueil</NavItem>
             <NavItem to="/#destinations">Voyage</NavItem>
-            <NavItem to="/package">Package</NavItem>
+            <NavItem to="/#offres">Offres</NavItem>
             <NavItem to="/about">A propos</NavItem>
           </div>
           
@@ -411,6 +412,27 @@ export default function Navbar() {
                 )}
               </MenuItem>
             </Menu>
+            {/* Hamburger Button (Mobile Only) */}
+<button
+  className="md:hidden flex flex-col justify-center items-center w-10 h-10 space-y-1"
+  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+>
+  <span
+    className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
+      isMobileMenuOpen ? "rotate-45 translate-y-1.5" : ""
+    }`}
+  />
+  <span
+    className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
+      isMobileMenuOpen ? "opacity-0" : ""
+    }`}
+  />
+  <span
+    className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
+      isMobileMenuOpen ? "-rotate-45 -translate-y-1.5" : ""
+    }`}
+  />
+</button>
           </div>
         </div>
       </nav>
@@ -495,6 +517,27 @@ export default function Navbar() {
           />
         </div>
       </Dialog>
+      {/* Mobile Menu */}
+<div
+  className={`md:hidden overflow-hidden transition-all duration-500 ${
+    isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+  }`}
+>
+  <div className="bg-white shadow-md px-6 py-6 space-y-6">
+    <MobileNavItem to="/#hero" onClick={() => setIsMobileMenuOpen(false)}>
+      Accueil
+    </MobileNavItem>
+    <MobileNavItem to="/#destinations" onClick={() => setIsMobileMenuOpen(false)}>
+      Voyage
+    </MobileNavItem>
+    <MobileNavItem to="/#offres" onClick={() => setIsMobileMenuOpen(false)}>
+      Offres
+    </MobileNavItem>
+    <MobileNavItem to="/about" onClick={() => setIsMobileMenuOpen(false)}>
+      A propos
+    </MobileNavItem>
+  </div>
+</div>
     </>
   );
 }
@@ -522,6 +565,18 @@ function NavItem({ to, children }) {
           isActive ? "w-full" : "w-0"
         }`}
       />
+    </NavLink>
+  );
+  
+}
+function MobileNavItem({ to, children, onClick }) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className="block text-lg text-gray-700 hover:text-[#00C0E8] transition"
+    >
+      {children}
     </NavLink>
   );
 }
