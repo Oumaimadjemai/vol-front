@@ -198,7 +198,8 @@ export default function Navbar() {
             <NavItem to="/#hero">{t("accueil")}</NavItem>
             <NavItem to="/#destinations">{t("voyage")}</NavItem>
             <NavItem to="/#offres">{t("offres")}</NavItem>
-            <NavItem to="/about">{t("apropos")}</NavItem>
+            <NavItem to="/#about">{t("apropos")}</NavItem>
+             <NavItem to="/#contact">{t("contact")}</NavItem>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -539,8 +540,11 @@ export default function Navbar() {
     <MobileNavItem to="/#offres" onClick={() => setIsMobileMenuOpen(false)}>
       {t("offres")}
     </MobileNavItem>
-    <MobileNavItem to="/about" onClick={() => setIsMobileMenuOpen(false)}>
+    <MobileNavItem to="/#about" onClick={() => setIsMobileMenuOpen(false)}>
       {t("apropos")}
+    </MobileNavItem>
+    <MobileNavItem to="/#contact" onClick={() => setIsMobileMenuOpen(false)}>
+      {t("contact")}
     </MobileNavItem>
   </div>
 </div>

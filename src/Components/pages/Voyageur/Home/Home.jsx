@@ -1,9 +1,10 @@
 import DestinationAlbum from "./DestinationAlbum";
-import home from "../../assets/images/home.png";
+import home from "../../../../assets/images/home.png";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import OffreSpecial from "./OffreSpecial";
 import { useTranslation } from "react-i18next";
+import WhyTravling from "./WhyTravling";
+import OffreSpecial from "./OffreSpecial";
 export default function Home() {
   const location = useLocation();
   const { t } = useTranslation();
@@ -41,6 +42,7 @@ useEffect(() => {
 
       <DestinationAlbum />
       <OffreSpecial/>
+      <WhyTravling/>
     </>
   );
 }
