@@ -4,7 +4,7 @@ import loginImage from "../../assets/images/login.png";
 import { FcGoogle } from "react-icons/fc";
 import msAuthInstance from "../../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
-
+import { useTranslation } from "react-i18next";
 export default function Login({ onLoginSuccess, onSwitchToSignup, onSwitchToReset }) {
   const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState("");
@@ -12,7 +12,7 @@ export default function Login({ onLoginSuccess, onSwitchToSignup, onSwitchToRese
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
+const {t}=useTranslation();
   const handleLogin = async () => {
     // Basic validation
     if (!identifier.trim() || !password.trim()) {
@@ -87,10 +87,10 @@ export default function Login({ onLoginSuccess, onSwitchToSignup, onSwitchToRese
 
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-8">
         <div className="w-full max-w-sm self-start mt-0">
-          <p className="text-sm text-gray-600 mb-1">Bienvenue</p>
+          <p className="text-sm text-gray-600 mb-1">{t("login_welcome")}</p>
 
           <h2 className="text-2xl font-bold mb-3 font-playfair">
-            Connectez-vous à votre compte
+            {t("login_subtitle")}
           </h2>
 
           {/* Error message display */}

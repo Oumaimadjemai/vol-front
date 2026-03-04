@@ -3,9 +3,10 @@ import home from "../../assets/images/home.png";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import OffreSpecial from "./OffreSpecial";
-
+import { useTranslation } from "react-i18next";
 export default function Home() {
   const location = useLocation();
+  const { t } = useTranslation();
 
 useEffect(() => {
   if (location.hash) {
@@ -17,28 +18,26 @@ useEffect(() => {
 }, [location]);
   return (
     <>
-      <section 
-      id="hero"
-      className="relative w-full h-screen overflow-hidden">
-       
-        <img
-          src={home}
-          alt="Travel World"
-          className="hidden sm:flex absolute inset-0 w-full h-full object-contain object-center ml-40"
-        />
+     <section 
+  id="hero"
+  className="relative w-full h-screen overflow-hidden"
+>
+  {/* Background Image */}
+  <img
+    src={home}
+    alt="Travel World"
+    className="absolute inset-0 w-full h-full object-cover sm:object-contain sm:ml-40"
+  />
 
-        
-        <div className="relative z-10 h-full flex items-center">
-          <div className="max-w-7xl mx-auto w-full pl-20">
-            <h2 className="text-[#00C0E8] text-6xl md:text-6xl font-bold leading-tight font-playfair">
-              Pilotez votre <br/>
-              activité<br/>
-               en toute<br/>
-                simplicité
-            </h2>
-          </div>
-        </div>
-      </section>
+  {/* Text Overlay */}
+  <div className="relative z-10 h-full flex items-center">
+    <div className="max-w-7xl mx-auto w-full px-4 text-center sm:text-left">
+      <h2 className="text-[#00C0E8] text-5xl sm:text-6xl font-bold leading-tight font-playfair whitespace-pre-line">
+        {t("hero_title")}
+      </h2>
+    </div>
+  </div>
+</section>
 
       <DestinationAlbum />
       <OffreSpecial/>
