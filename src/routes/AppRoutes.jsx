@@ -2,10 +2,11 @@ import { Routes, Route } from "react-router-dom";
 import AuthCallback from "../Components/authentication/AuthCallback";
 import Login from "../Components/authentication/Login";
 import Signup from "../Components/authentication/Signup";
-import Home from "../Components/pages/Home";
+
 import ForgotPassword from "../Components/authentication/ResetPassword";
 import ResetPassword from "../Components/authentication/ConfirmPassword";
 import NotFound from "../Components/pages/NotFound";
+import Home from "../Components/pages/Voyageur/Home/Home";
 
 
 export default function AppRoutes() {
