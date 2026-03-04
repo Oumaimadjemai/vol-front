@@ -4,8 +4,8 @@ import london from "../../assets/images/london.jpg";
 import europe from "../../assets/images/europe.png";
 import tombyrom from "../../assets/images/tom-byrom.jpg";
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
-
-const destinations = [
+import { useTranslation } from "react-i18next";
+const offres = [
    {
     id: 1,
     name: "Monument of Berlin",
@@ -40,6 +40,7 @@ const destinations = [
   },
 ];
 export default function OffreSpecial() {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardsToShow, setCardsToShow] = useState(3);
 
@@ -63,7 +64,7 @@ export default function OffreSpecial() {
   const cardWidth = 340;
   const gap = 32;
 
-  const maxIndex = destinations.length - cardsToShow;
+  const maxIndex = offres.length - cardsToShow;
 
   const nextSlide = () => {
     if (currentIndex >= maxIndex) {
@@ -89,7 +90,7 @@ export default function OffreSpecial() {
      
       <div className="mb-12">
         <h2 className="text-4xl font-semibold text-gray-900 mb-3 font-playfair">
-          Offres Speciales
+          {t("offres_title")}
         </h2>
         <div className="w-20 h-1 bg-[#00C0E8] mb-4"></div>
         
@@ -105,7 +106,7 @@ export default function OffreSpecial() {
             transform: `translateX(-${currentIndex * (cardWidth + gap)}px)`
           }}
         >
-          {destinations.map((dest) => (
+          {offres.map((dest) => (
   <div
     key={dest.id}
     className="min-w-[340px] rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition duration-300 bg-white"
@@ -135,7 +136,7 @@ export default function OffreSpecial() {
       {/* Trip Duration */}
       <div className="flex items-center text-gray-500 text-sm">
         <MapPin size={16} className="mr-2" />
-        <span>{dest.duration}</span>
+        <span>{dest.duration.replace("Days Trip", t("days_trip"))}</span>
       </div>
     </div>
   </div>

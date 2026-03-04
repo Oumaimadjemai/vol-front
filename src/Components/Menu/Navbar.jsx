@@ -12,7 +12,7 @@ import ForgotPassword from "../authentication/ResetPassword";
 import en from "../../assets/images/English.jpg";
 import fr from "../../assets/images/francais.jpg";
 import alg from "../../assets/images/algerie.jpg";
-
+import {useTranslation} from "react-i18next";
 export default function Navbar() {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function Navbar() {
   const [language, setLanguage] = useState("FR");
   const [langAnchorEl, setLangAnchorEl] = useState(null);
   const langOpen = Boolean(langAnchorEl);
-  
+  const { t, i18n } = useTranslation();
   const open = Boolean(anchorEl);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -157,11 +157,17 @@ export default function Navbar() {
   };
 
   const handleLanguageChange = (lang) => {
-    setLanguage(lang);
-    setLangAnchorEl(null);
-    // Add your language change logic here
-    // For example: i18n.changeLanguage(lang.toLowerCase());
-  };
+  setLanguage(lang);
+  setLangAnchorEl(null);
+
+  i18n.changeLanguage(lang.toLowerCase());
+  localStorage.setItem("lang", lang.toLowerCase());
+  if (lang === "AR") {
+  document.body.dir = "rtl";
+} else {
+  document.body.dir = "ltr";
+}
+};
 
   // Function to get flag image based on language
   const getFlagImage = (lang) => {
@@ -189,10 +195,10 @@ export default function Navbar() {
           </div>
           
           <div className="hidden md:flex space-x-6 absolute left-1/2 transform -translate-x-1/2">
-            <NavItem to="/#hero">Accueil</NavItem>
-            <NavItem to="/#destinations">Voyage</NavItem>
-            <NavItem to="/#offres">Offres</NavItem>
-            <NavItem to="/about">A propos</NavItem>
+            <NavItem to="/#hero">{t("accueil")}</NavItem>
+            <NavItem to="/#destinations">{t("voyage")}</NavItem>
+            <NavItem to="/#offres">{t("offres")}</NavItem>
+            <NavItem to="/about">{t("apropos")}</NavItem>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -205,13 +211,13 @@ export default function Navbar() {
                   onClick={() => setIsSignupOpen(true)}
                   className="px-4 py-2 rounded-3xl text-slate-700 font-medium hover:text-sky-500 transition"
                 >
-                  Inscription
+                  {t("inscription")}
                 </button>
                 <button
                   onClick={() => setIsLoginOpen(true)}
                   className="px-4 py-2 rounded-3xl bg-[#00C0E8] text-white hover:bg-sky-500 transition font-medium"
                 >
-                  Connexion
+                  {t("connexion")}
                 </button>
               </>
             ) : (
@@ -253,10 +259,10 @@ export default function Navbar() {
                   }}
                 >
                   <MenuItem onClick={handleProfileClick} sx={{ py: 1.5 }}>
-                    Mon Profil
+                    {t("monProfil")}
                   </MenuItem>
                   <MenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
-                    Déconnexion
+                    {t("deconnexion")}
                   </MenuItem>
                 </Menu>
               </div>
@@ -525,16 +531,16 @@ export default function Navbar() {
 >
   <div className="bg-white shadow-md px-6 py-6 space-y-6">
     <MobileNavItem to="/#hero" onClick={() => setIsMobileMenuOpen(false)}>
-      Accueil
+      {t("accueil")}
     </MobileNavItem>
     <MobileNavItem to="/#destinations" onClick={() => setIsMobileMenuOpen(false)}>
-      Voyage
+      {t("voyage")}
     </MobileNavItem>
     <MobileNavItem to="/#offres" onClick={() => setIsMobileMenuOpen(false)}>
-      Offres
+      {t("offres")}
     </MobileNavItem>
     <MobileNavItem to="/about" onClick={() => setIsMobileMenuOpen(false)}>
-      A propos
+      {t("apropos")}
     </MobileNavItem>
   </div>
 </div>

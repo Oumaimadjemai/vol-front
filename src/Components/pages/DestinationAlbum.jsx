@@ -4,7 +4,7 @@ import Meillinuim from "../../assets/images/Milennium.jpg";
 import damiano from "../../assets/images/damiano.jpg";
 import tombyrom from "../../assets/images/tom-byrom.jpg";
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
-
+import { useTranslation } from "react-i18next";
 const destinations = [
   { id: 1, name: "Monument of Berlin", location: "Berlin, Germany", image: Berlin },
   { id: 2, name: "Millennium Bridge", location: "London, United Kingdom", image: Meillinuim },
@@ -13,6 +13,7 @@ const destinations = [
 ];
 
 export default function DestinationAlbum() {
+   const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardsToShow, setCardsToShow] = useState(3);
 
@@ -62,11 +63,11 @@ export default function DestinationAlbum() {
      
       <div className="mb-12">
         <h2 className="text-4xl font-semibold text-gray-900 mb-3 font-playfair">
-          Populaire Destinations
+          {t("destinations_title")}
         </h2>
         <div className="w-20 h-1 bg-[#00C0E8] mb-4"></div>
         <p className="text-gray-500">
-          Destinations les plus populaires à travers le monde, des lieux historiques aux merveilles naturelles.
+          {t("destinations_desc")}
         </p>
       </div>
 
