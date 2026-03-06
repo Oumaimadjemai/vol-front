@@ -14,6 +14,8 @@ import AdminLayout from "../layouts/AdminLayout";
 import ProtectedAdmin from "./ProtectedAdmin";
 import Dashboard from "../Components/pages/Admin/Dashboard/Dashboard";
 
+import UsersBoard from "../Components/pages/Admin/Dashboard/users";
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -30,7 +32,11 @@ export default function AppRoutes() {
 
       {/* ADMIN LOGIN */}
       <Route path="/admin/login" element={<LoginAdmin />} />
-      <Route path="/admin" element={<Dashboard/>} />
+      <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<Dashboard/>} />
+          <Route path="/users" element={<UsersBoard/>}/>
+        </Route>
+      
 
       {/* ADMIN PROTECTED */}
       <Route element={<ProtectedAdmin />}>
