@@ -22,7 +22,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import ProtectedAdmin from "./ProtectedAdmin";
 import Dashboard from "../Components/pages/Admin/Dashboard/Dashboard";
 
-import UsersBoard from "../Components/pages/Admin/Dashboard/users";
+import UsersBoard from "../Components/pages/Admin/users/users";
 
 export default function AppRoutes() {
   return (
@@ -42,7 +42,7 @@ export default function AppRoutes() {
       <Route path="/admin/login" element={<LoginAdmin />} />
       <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Dashboard/>} />
-          <Route path="/users" element={<UsersBoard/>}/>
+          <Route path="/admin/users" element={<UsersBoard/>}/>
         </Route>
       
 

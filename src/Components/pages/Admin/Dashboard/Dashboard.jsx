@@ -1,6 +1,6 @@
 import { Card, CardContent, Typography, Chip } from "@mui/material";
 
-import { LocationOn, ArrowUpward, Add, Visibility } from "@mui/icons-material";
+import { LocationOn, Add, Visibility } from "@mui/icons-material";
 
 import {
   LineChart,

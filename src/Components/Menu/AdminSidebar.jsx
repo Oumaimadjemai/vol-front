@@ -17,7 +17,7 @@ const navItems = [
   { path: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
   { path: "/admin/bookings", label: "Réservations", icon: Calendar },
   { path: "/admin/destinations", label: "Destinations", icon: MapPin },
-  { path: "/users", label: "Utilisateurs", icon: Users },
+  { path: "/admin/users", label: "Utilisateurs", icon: Users },
   { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { path: "/admin/messages", label: "Messages", icon: MessageSquare },
   { path: "/admin/analytics", label: "Analytiques", icon: BarChart3 },
@@ -59,7 +59,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, handleLogout
 </div>
 
           {/* NAVIGATION */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 mt-2">
             {navItems.map((item) => {
               const Icon = item.icon;
 

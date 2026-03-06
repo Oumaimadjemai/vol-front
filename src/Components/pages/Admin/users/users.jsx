@@ -1,10 +1,6 @@
 import { useState } from "react";
 import {
-  Avatar,
   Chip,
-  Button,
-  TextField,
-  InputAdornment,
   Menu,
   MenuItem,
   Select,
@@ -27,7 +23,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   CircularProgress,
   Zoom,
 } from "@mui/material";
@@ -64,7 +59,7 @@ import {
   TrendingUp,
   AlertTriangle,
   Save,
-  X,
+ 
 } from "lucide-react";
 
 const mockUsers = [
