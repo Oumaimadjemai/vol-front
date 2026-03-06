@@ -160,18 +160,18 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="flex gap-4 flex-wrap">
-          {quickActions.map((action) => (
-            <Link key={action.label} to={action.link}>
-              <button
-                className={`flex items-center gap-2 ${action.color} text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg`}
-              >
-                {action.icon}
-                {action.label}
-              </button>
-            </Link>
-          ))}
-        </div>
+       <div className="flex flex-wrap justify-end gap-3">
+  {quickActions.map((action) => (
+    <Link key={action.label} to={action.link}>
+      <button
+        className={`flex items-center gap-2 ${action.color} text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg`}
+      >
+        {action.icon}
+        {action.label}
+      </button>
+    </Link>
+  ))}
+</div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
