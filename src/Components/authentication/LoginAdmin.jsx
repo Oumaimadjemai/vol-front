@@ -98,7 +98,7 @@ export default function LoginAdmin() {
             </label>
 
             <a
-              href="#"
+              href="/#"
               className="text-[#00C0E8] hover:underline"
             >
               Mot de passe oublié ?
