@@ -5,6 +5,7 @@ import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import WhyTravling from "./WhyTravling";
 import OffreSpecial from "./OffreSpecial";
+import FlightSearch from "../../../Vol/SearchFlight/FlightSearchPage";
 export default function Home() {
   const location = useLocation();
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ useEffect(() => {
     <>
      <section 
   id="hero"
-  className="relative w-full h-screen overflow-hidden"
+  className="relative w-full h-[400px] overflow-hidden"
 >
   {/* Background Image */}
   <img
@@ -39,7 +40,7 @@ useEffect(() => {
     </div>
   </div>
 </section>
-
+<FlightSearch/>
       <DestinationAlbum />
       <OffreSpecial/>
       <WhyTravling/>
