@@ -23,6 +23,8 @@ import ProtectedAdmin from "./ProtectedAdmin";
 import Dashboard from "../Components/pages/Admin/Dashboard/Dashboard";
 
 import UsersBoard from "../Components/pages/Admin/users/users";
+import FlightSearch from "../Components/Vol/SearchFlight/FlightSearchPage";
+import ResultatSearch from "../Components/Vol/ResultatSearchePage/ResultatSearch";
 
 export default function AppRoutes() {
   return (
@@ -33,6 +35,8 @@ export default function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+         <Route path="/results" element={<ResultatSearch />} />
+     <Route path="/vol" element={<FlightSearch/>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:uid/:token/" element={<ResetPassword />} />

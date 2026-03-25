@@ -19,12 +19,14 @@ export default function FlightSearch() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const { airports } = useAirports();
-  const [multiFlights, setMultiFlights] = useState([{ from: "", to: "", date: "" }]);
+  const [multiFlights, setMultiFlights] = useState([
+    { from: "", to: "", date: "" },
+  ]);
   const [passengers, setPassengers] = useState({ adult: 1, child: 0, baby: 0 });
   const [isSearching, setIsSearching] = useState(false);
 
   const totalPassengers = passengers.adult + passengers.child + passengers.baby;
-const changeCount = (type, value) => {
+  const changeCount = (type, value) => {
     setPassengers((prev) => {
       const newValue = prev[type] + value;
       if (type === "adult" && newValue < 1) return prev;
@@ -53,7 +55,8 @@ const changeCount = (type, value) => {
     }
     updated[index][field] = value;
     if (field === "from" && updated[index].to === value) updated[index].to = "";
-    if (field === "to" && updated[index].from === value) updated[index].from = "";
+    if (field === "to" && updated[index].from === value)
+      updated[index].from = "";
     setMultiFlights(updated);
   };
 
@@ -70,18 +73,21 @@ const changeCount = (type, value) => {
 
     try {
       setIsSearching(true);
-      
+
       let response;
       let searchData;
 
       if (activeTab === "multi") {
-        response = await axios.post("http://localhost:3002/api/flights/multi-destination", {
-          flights: multiFlights,
-          passengers,
-          travelClass: flightClass,
-          options,
-        });
-        
+        response = await axios.post(
+          "http://localhost:3002/api/flights/multi-destination",
+          {
+            flights: multiFlights,
+            passengers,
+            travelClass: flightClass,
+            options,
+          },
+        );
+
         searchData = {
           flights: response.data,
           type: "multi",
@@ -89,10 +95,9 @@ const changeCount = (type, value) => {
             flights: multiFlights,
             passengers,
             travelClass: flightClass,
-            options
-          }
+            options,
+          },
         };
-        
       } else {
         response = await axios.get("http://localhost:3002/api/flights/search", {
           params: {
@@ -109,7 +114,7 @@ const changeCount = (type, value) => {
             baggage: options.baggage,
           },
         });
-        
+
         searchData = {
           flights: response.data,
           type: activeTab === "retour" ? "roundtrip" : "oneway",
@@ -120,15 +125,14 @@ const changeCount = (type, value) => {
             returnDate,
             passengers,
             travelClass: flightClass,
-            options
-          }
+            options,
+          },
         };
       }
-      
-      navigate("/results", { 
-        state: searchData 
+
+      navigate("/results", {
+        state: searchData,
       });
-      
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || "Erreur recherche vols");
@@ -138,42 +142,48 @@ const changeCount = (type, value) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center p-10">
-      <div className="w-full max-w-6xl">
-        <h3 className="text-2xl text-gray-800 mb-2 text-left">Réservez maintenant</h3>
+    <div className="min-h-screen  w-full p-6">
+      <div className="w-full ">
+        <h3 className="text-4xl text-gray-800 mb-2 text-left font-playfair font-bold">
+          Réservez maintenant
+        </h3>
         <div className="w-40 h-1 bg-[#00C0E8] mb-8 rounded"></div>
-
-        <SearchForm
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          // OneWayRoundTrip props
-          from={from}
-          setFrom={setFrom}
-          to={to}
-          setTo={setTo}
-          departureDate={departureDate}
-          setDepartureDate={setDepartureDate}
-          returnDate={returnDate}
-          setReturnDate={setReturnDate}
-          airports={airports}
-          today={today}
-          // MultiDestination props
-          multiFlights={multiFlights}
-          updateMultiFlight={updateMultiFlight}
-          removeMultiFlight={removeMultiFlight}
-          addMultiFlight={addMultiFlight}
-          // PassengersOptions props
-          totalPassengers={totalPassengers}
-          passengers={passengers}
-          changeCount={changeCount}
-          flightClass={flightClass}
-          setFlightClass={setFlightClass}
-          options={options}
-          setOptions={setOptions}
-          // Search props
-          handleSearch={handleSearch}
-          isSearching={isSearching}
-        />
+      </div>
+      <div className="flex justify-center">
+        <div className="w-full max-w-6xl">
+          {" "}
+          <SearchForm
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            // OneWayRoundTrip props
+            from={from}
+            setFrom={setFrom}
+            to={to}
+            setTo={setTo}
+            departureDate={departureDate}
+            setDepartureDate={setDepartureDate}
+            returnDate={returnDate}
+            setReturnDate={setReturnDate}
+            airports={airports}
+            today={today}
+            // MultiDestination props
+            multiFlights={multiFlights}
+            updateMultiFlight={updateMultiFlight}
+            removeMultiFlight={removeMultiFlight}
+            addMultiFlight={addMultiFlight}
+            // PassengersOptions props
+            totalPassengers={totalPassengers}
+            passengers={passengers}
+            changeCount={changeCount}
+            flightClass={flightClass}
+            setFlightClass={setFlightClass}
+            options={options}
+            setOptions={setOptions}
+            // Search props
+            handleSearch={handleSearch}
+            isSearching={isSearching}
+          />
+        </div>
       </div>
     </div>
   );
