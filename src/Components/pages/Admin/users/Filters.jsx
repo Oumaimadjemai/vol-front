@@ -9,7 +9,8 @@ const Filters = ({
   onRoleFilterChange,
   statusFilter,
   onStatusFilterChange,
-  onClearFilters 
+  onClearFilters,
+  showRoleFilter = true // Nouvelle prop pour contrôler l'affichage du filtre rôle
 }) => {
   return (
     <Paper
@@ -43,16 +44,19 @@ const Filters = ({
           </div>
         </div>
 
-        <select
-          value={roleFilter}
-          onChange={(e) => onRoleFilterChange(e.target.value)}
-          className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00C0E8]/20 focus:border-[#00C0E8] bg-white min-w-[150px]"
-        >
-          <option value="all">Tous les rôles</option>
-          <option value="Admin">Admin</option>
-          <option value="Agent">Agent</option>
-          <option value="Voyageur">Voyageur</option>
-        </select>
+        {/* Filtre Rôle - conditionnel */}
+        {showRoleFilter && (
+          <select
+            value={roleFilter}
+            onChange={(e) => onRoleFilterChange(e.target.value)}
+            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00C0E8]/20 focus:border-[#00C0E8] bg-white min-w-[150px]"
+          >
+            <option value="all">Tous les rôles</option>
+            <option value="Admin">Admin</option>
+            <option value="Agent">Agent</option>
+            <option value="Voyageur">Voyageur</option>
+          </select>
+        )}
 
         <select
           value={statusFilter}

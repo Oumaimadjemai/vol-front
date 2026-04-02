@@ -18,7 +18,7 @@ export default function AdminLayout() {
 
     toast.success("Déconnexion réussie");
 
-    navigate("/login");
+    navigate("/admin/login");
   };
 
   return (
