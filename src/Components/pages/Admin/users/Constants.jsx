@@ -1,7 +1,7 @@
 import { 
   User, Award, UserCog, CheckCircle2, XCircle, AlertCircle,
   BarChart3, Hotel, Plane, Car, Utensils, Compass, Users,
-  Settings, TrendingUp 
+  Settings, 
 } from "lucide-react";
 
 export const mockUsers = [
@@ -78,16 +78,16 @@ export const mockUsers = [
 ];
 
 export const agentFeatures = [
-  { id: "dashboard", label: "Tableau de bord", icon: BarChart3 },
-  { id: "bookings", label: "Gérer les réservations", icon: Hotel },
-  { id: "hotels", label: "Gérer les hôtels", icon: Hotel },
-  { id: "flights", label: "Gérer les vols", icon: Plane },
-  { id: "transfers", label: "Gérer les transferts", icon: Car },
-  { id: "restaurants", label: "Gérer les restaurants", icon: Utensils },
-  { id: "tours", label: "Gérer les visites", icon: Compass },
-  { id: "users", label: "Gérer les voyageurs", icon: Users },
-  { id: "reports", label: "Rapports", icon: BarChart3 },
-  { id: "settings", label: "Paramètres", icon: Settings },
+  { id: "dashboard", value: "dashboard", label: "Tableau de bord", icon: BarChart3 },
+  { id: "bookings", value: "bookings", label: "Gérer les réservations", icon: Hotel },
+  { id: "hotels", value: "hotels", label: "Gérer les hôtels", icon: Hotel },
+  { id: "flights", value: "flights", label: "Gérer les vols", icon: Plane },
+  { id: "transfers", value: "transfers", label: "Gérer les transferts", icon: Car },
+  { id: "restaurants", value: "restaurants", label: "Gérer les restaurants", icon: Utensils },
+  { id: "tours", value: "tours", label: "Gérer les visites", icon: Compass },
+  { id: "users", value: "users", label: "Gérer les voyageurs", icon: Users },
+  { id: "reports", value: "reports", label: "Rapports", icon: BarChart3 },
+  { id: "settings", value: "settings", label: "Paramètres", icon: Settings },
 ];
 
 export const roleConfig = {

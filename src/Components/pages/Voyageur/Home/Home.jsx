@@ -20,24 +20,24 @@ useEffect(() => {
 }, [location]);
   return (
     <>
-     <section 
+    <section
   id="hero"
-  className="relative w-full h-[400px] overflow-hidden"
+  className="w-full h-[350px] flex items-center justify-between px-6 sm:px-12"
 >
-  {/* Background Image */}
-  <img
-    src={home}
-    alt="Travel World"
-    className="absolute inset-0 w-full h-full object-cover sm:object-contain sm:ml-40"
-  />
+  {/* LEFT: Text */}
+  <div className="max-w-xl">
+    <h2 className="text-[#00C0E8] text-5xl sm:text-6xl font-bold leading-tight font-playfair whitespace-pre-line">
+      {t("hero_title")}
+    </h2>
+  </div>
 
-  {/* Text Overlay */}
-  <div className="relative z-10 h-full flex items-center">
-    <div className="max-w-7xl mx-auto w-full px-4 text-center sm:text-left">
-      <h2 className="text-[#00C0E8] text-5xl sm:text-6xl font-bold leading-tight font-playfair whitespace-pre-line">
-        {t("hero_title")}
-      </h2>
-    </div>
+  {/* RIGHT: Image */}
+  <div className="h-full flex items-center mt-10">
+    <img
+      src={home}
+      alt="Travel World"
+      className="h-full object-contain"
+    />
   </div>
 </section>
 <FlightSearch/>
