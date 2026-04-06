@@ -13,6 +13,7 @@ import en from "../../assets/images/English.jpg";
 import fr from "../../assets/images/francais.jpg";
 import alg from "../../assets/images/algerie.jpg";
 import {useTranslation} from "react-i18next";
+
 export default function Navbar() {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -140,11 +141,10 @@ export default function Navbar() {
     setAnchorEl(null);
   };
 
-  const handleProfileClick = () => {
-    handleClose();
-    // Add navigation to profile page if needed
-    // navigate("/profile");
-  };
+const handleProfileClick = () => {
+  handleClose();
+  navigate("/profile"); // Add this navigation
+};
 
   console.log("Navbar - Rendering, isAuthenticated:", isAuthenticated);
 
@@ -157,17 +157,17 @@ export default function Navbar() {
   };
 
   const handleLanguageChange = (lang) => {
-  setLanguage(lang);
-  setLangAnchorEl(null);
+    setLanguage(lang);
+    setLangAnchorEl(null);
 
-  i18n.changeLanguage(lang.toLowerCase());
-  localStorage.setItem("lang", lang.toLowerCase());
-  if (lang === "AR") {
-  document.body.dir = "rtl";
-} else {
-  document.body.dir = "ltr";
-}
-};
+    i18n.changeLanguage(lang.toLowerCase());
+    localStorage.setItem("lang", lang.toLowerCase());
+    if (lang === "AR") {
+      document.body.dir = "rtl";
+    } else {
+      document.body.dir = "ltr";
+    }
+  };
 
   // Function to get flag image based on language
   const getFlagImage = (lang) => {
@@ -185,7 +185,8 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white shadow-md">
+      {/* Navbar with custom shadow */}
+      <nav className="bg-white shadow-custom relative z-50">
         <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
           <div 
             className="text-xl font-bold text-[#00C0E8] cursor-pointer font-playfair"
@@ -199,13 +200,10 @@ export default function Navbar() {
             <NavItem to="/#destinations">{t("voyage")}</NavItem>
             <NavItem to="/#offres">{t("offres")}</NavItem>
             <NavItem to="/#about">{t("apropos")}</NavItem>
-             <NavItem to="/#contact">{t("contact")}</NavItem>
+            <NavItem to="/#contact">{t("contact")}</NavItem>
           </div>
           
           <div className="flex items-center space-x-4">
-            {/* Language Selector - Cercle avec drapeau et texte à côté */}
-            
-
             {!isAuthenticated ? (
               <>
                 <button
@@ -419,32 +417,40 @@ export default function Navbar() {
                 )}
               </MenuItem>
             </Menu>
+            
             {/* Hamburger Button (Mobile Only) */}
-<button
-  className="md:hidden flex flex-col justify-center items-center w-10 h-10 space-y-1"
-  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
->
-  <span
-    className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
-      isMobileMenuOpen ? "rotate-45 translate-y-1.5" : ""
-    }`}
-  />
-  <span
-    className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
-      isMobileMenuOpen ? "opacity-0" : ""
-    }`}
-  />
-  <span
-    className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
-      isMobileMenuOpen ? "-rotate-45 -translate-y-1.5" : ""
-    }`}
-  />
-</button>
+            <button
+              className="md:hidden flex flex-col justify-center items-center w-10 h-10 space-y-1"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <span
+                className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
+                  isMobileMenuOpen ? "rotate-45 translate-y-1.5" : ""
+                }`}
+              />
+              <span
+                className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
+                  isMobileMenuOpen ? "opacity-0" : ""
+                }`}
+              />
+              <span
+                className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
+                  isMobileMenuOpen ? "-rotate-45 -translate-y-1.5" : ""
+                }`}
+              />
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Dialogs - unchanged */}
+      {/* Add the custom shadow style to your global CSS or in a style tag */}
+      <style jsx>{`
+        .shadow-custom {
+          box-shadow: 0 4px 20px rgba(0, 192, 232, 0.15), 0 1px 2px rgba(0, 192, 232, 0.1);
+        }
+      `}</style>
+
+      {/* Dialogs */}
       <Dialog
         open={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
@@ -524,30 +530,31 @@ export default function Navbar() {
           />
         </div>
       </Dialog>
+      
       {/* Mobile Menu */}
-<div
-  className={`md:hidden overflow-hidden transition-all duration-500 ${
-    isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-  }`}
->
-  <div className="bg-white shadow-md px-6 py-6 space-y-6">
-    <MobileNavItem to="/#hero" onClick={() => setIsMobileMenuOpen(false)}>
-      {t("accueil")}
-    </MobileNavItem>
-    <MobileNavItem to="/#destinations" onClick={() => setIsMobileMenuOpen(false)}>
-      {t("voyage")}
-    </MobileNavItem>
-    <MobileNavItem to="/#offres" onClick={() => setIsMobileMenuOpen(false)}>
-      {t("offres")}
-    </MobileNavItem>
-    <MobileNavItem to="/#about" onClick={() => setIsMobileMenuOpen(false)}>
-      {t("apropos")}
-    </MobileNavItem>
-    <MobileNavItem to="/#contact" onClick={() => setIsMobileMenuOpen(false)}>
-      {t("contact")}
-    </MobileNavItem>
-  </div>
-</div>
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-500 ${
+          isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="bg-white shadow-md px-6 py-6 space-y-6">
+          <MobileNavItem to="/#hero" onClick={() => setIsMobileMenuOpen(false)}>
+            {t("accueil")}
+          </MobileNavItem>
+          <MobileNavItem to="/#destinations" onClick={() => setIsMobileMenuOpen(false)}>
+            {t("voyage")}
+          </MobileNavItem>
+          <MobileNavItem to="/#offres" onClick={() => setIsMobileMenuOpen(false)}>
+            {t("offres")}
+          </MobileNavItem>
+          <MobileNavItem to="/#about" onClick={() => setIsMobileMenuOpen(false)}>
+            {t("apropos")}
+          </MobileNavItem>
+          <MobileNavItem to="/#contact" onClick={() => setIsMobileMenuOpen(false)}>
+            {t("contact")}
+          </MobileNavItem>
+        </div>
+      </div>
     </>
   );
 }
@@ -577,8 +584,8 @@ function NavItem({ to, children }) {
       />
     </NavLink>
   );
-  
 }
+
 function MobileNavItem({ to, children, onClick }) {
   return (
     <NavLink

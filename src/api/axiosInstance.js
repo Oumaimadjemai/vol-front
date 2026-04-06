@@ -30,7 +30,7 @@ msAuthInstance.interceptors.response.use(
       
       try {
         const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post('http://localhost:8000/auth/refresh/', {
+        const response = await axios.post('http://localhost:8080/auth-service/auth/refresh/', {
           refresh: refreshToken
         });
         
@@ -39,8 +39,8 @@ msAuthInstance.interceptors.response.use(
         
         return msAuthInstance(originalRequest);
       } catch (refreshError) {
-        // Rediriger vers la page de connexion
-        window.location.href = '/signin';
+        // Redirect removed - just return the error
+        console.error('Token refresh failed:', refreshError);
         return Promise.reject(refreshError);
       }
     }
