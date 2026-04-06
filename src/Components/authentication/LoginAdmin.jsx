@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, Plane, AlertCircle, Shield, UserCog, ArrowRight, Sparkles, X } from "lucide-react";
-import msAuthInstance from "../../api/axiosInstance";
+import axiosInstance from "../../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginAdmin() {
@@ -28,7 +28,7 @@ export default function LoginAdmin() {
     setError("");
 
     try {
-      const response = await msAuthInstance.post("auth-service/auth/login/", {
+      const response = await axiosInstance.post("auth-service/auth/login/", {
         identifier,
         password,
       });
@@ -96,7 +96,7 @@ export default function LoginAdmin() {
 
     try {
       // Adjust this endpoint according to your API
-      const response = await msAuthInstance.post("auth-service/auth/password-reset/", {
+      const response = await axiosInstance.post("auth-service/auth/password-reset/", {
         email: resetEmail,
       });
       

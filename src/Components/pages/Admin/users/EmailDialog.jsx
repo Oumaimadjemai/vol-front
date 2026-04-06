@@ -9,7 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Send, Mail, User, AtSign } from 'lucide-react';
-import msAuthInstance from "../../../../api/axiosInstance";
+import axiosInstance from "../../../../api/axiosInstance";
 
 const EmailDialog = ({ open, onClose, user, onEmailSent }) => {
   const [emailData, setEmailData] = useState({
@@ -52,7 +52,7 @@ const EmailDialog = ({ open, onClose, user, onEmailSent }) => {
 
     try {
       // Appel API pour envoyer l'email
-      const response = await msAuthInstance.post('/auth-service/auth/send-email/', {
+      const response = await axiosInstance.post('/auth-service/auth/send-email/', {
         to: user.email,
         subject: emailData.subject,
         content: emailData.content,

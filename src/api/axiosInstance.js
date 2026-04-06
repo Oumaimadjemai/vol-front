@@ -1,12 +1,12 @@
 // api/axiosInstance.js
 import axios from 'axios';
 
-const msAuthInstance = axios.create({
+const axiosInstance = axios.create({
   baseURL: 'http://localhost:8080/',  // Votre backend Django
 });
 
 // Intercepteur pour ajouter le token aux requêtes
-msAuthInstance.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -20,7 +20,7 @@ msAuthInstance.interceptors.request.use(
 );
 
 // Intercepteur pour rafraîchir le token en cas d'expiration
-msAuthInstance.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
@@ -37,7 +37,7 @@ msAuthInstance.interceptors.response.use(
         localStorage.setItem('access_token', response.data.access);
         originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
         
-        return msAuthInstance(originalRequest);
+        return axiosInstance(originalRequest);
       } catch (refreshError) {
         // Redirect removed - just return the error
         console.error('Token refresh failed:', refreshError);
@@ -49,4 +49,4 @@ msAuthInstance.interceptors.response.use(
   }
 );
 
-export default msAuthInstance;
+export default axiosInstance;

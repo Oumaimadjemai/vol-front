@@ -10,7 +10,8 @@ import { StepIndicator } from './StepIndicator';
 import { Sidebar } from './Sidebar';
 import { PassengerFormComponent } from './PassengerFormComponent';
 import { WILAYAS, getCityFromAirport } from './constants/flightConstants';
-import axios from '../../../api/axiosInstance';
+import axiosInstance from '../../../api/axiosInstance';
+
 
 export default function ReservationSystem({ reservationData }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -62,14 +63,14 @@ export default function ReservationSystem({ reservationData }) {
         return null;
       }
 
-      const response = await axios.get('/auth-service/auth/me/');
+      const response = await axiosInstance.get('/auth-service/auth/me/');
       console.log('User data from /me:', response.data);
       
       const currentUser = response.data;
       
       if (currentUser && currentUser.id) {
         try {
-          const voyageurResponse = await axios.get(`/auth-service/auth/voyageurs/by-user/${currentUser.id}/`);
+          const voyageurResponse = await axiosInstance.get(`/auth-service/auth/voyageurs/by-user/${currentUser.id}/`);
           const voyageurData = voyageurResponse.data;
           
           setAuthenticatedUser(voyageurData);
@@ -175,7 +176,7 @@ export default function ReservationSystem({ reservationData }) {
       const formData = new FormData();
       formData.append('passport_photo', file);
       
-      const response = await axios.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, formData, {
+      const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
@@ -196,7 +197,7 @@ export default function ReservationSystem({ reservationData }) {
     if (voyageurId) {
       setIsUpdating(true);
       try {
-        const response = await axios.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, {
+        const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, {
           passport_photo: null
         });
         console.log('Photo removed:', response.data);
@@ -262,7 +263,7 @@ export default function ReservationSystem({ reservationData }) {
       if (field === 'numPassport') updateData.num_passport = value;
       if (field === 'dateExpPassport') updateData.date_exp_passport = value;
       
-      const response = await axios.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, updateData);
+      const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, updateData);
       console.log(`Field ${field} updated:`, response.data);
       
       if (field === 'email') setEmail(value);
@@ -579,7 +580,7 @@ const prepareReservationData = () => {
       const reservationData = prepareReservationData();
       console.log('Creating reservation with data:', reservationData);
       
-      const response = await axios.post('/ms-reservation/reservations/', reservationData);
+      const response = await axiosInstance.post('/ms-reservation/reservations/', reservationData);
       console.log('Reservation created:', response.data);
       
       return response.data;
@@ -593,7 +594,7 @@ const prepareReservationData = () => {
   const confirmPrice = async (reservationId) => {
     try {
       console.log('Confirming price for reservation:', reservationId);
-      const response = await axios.post(`/ms-reservation/reservations/${reservationId}/confirm_price/`);
+      const response = await axiosInstance.post(`/ms-reservation/reservations/${reservationId}/confirm_price/`);
       console.log('Price confirmed:', response.data);
       return response.data;
     } catch (error) {
@@ -606,7 +607,7 @@ const prepareReservationData = () => {
   const bookReservation = async (reservationId) => {
     try {
       console.log('Booking reservation:', reservationId);
-      const response = await axios.post(`/ms-reservation/reservations/${reservationId}/book/`);
+      const response = await axiosInstance.post(`/ms-reservation/reservations/${reservationId}/book/`);
       console.log('Booking response:', response.data);
       return response.data;
     } catch (error) {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import SignupImage from "../../assets/images/login.png";
 import { FcGoogle } from "react-icons/fc";
-import msAuthInstance from "../../api/axiosInstance";
+import axiosInstance from "../../api/axiosInstance";
 
 export default function Signup({onSwitchToSignin,onSignupSuccess}) {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,7 +15,7 @@ export default function Signup({onSwitchToSignin,onSignupSuccess}) {
  const handleSignup = async () => {
   try {
     // 1️⃣ Create account
-    await msAuthInstance.post("auth-service/auth/signup/", {
+    await axiosInstance.post("auth-service/auth/signup/", {
       nom,
       prenom,
       email,
@@ -24,7 +24,7 @@ export default function Signup({onSwitchToSignin,onSignupSuccess}) {
     });
 
     // 2️⃣ Auto login after signup
-    const loginResponse = await msAuthInstance.post("auth-service/auth/login/", {
+    const loginResponse = await axiosInstance.post("auth-service/auth/login/", {
       identifier: email,
       password,
     });

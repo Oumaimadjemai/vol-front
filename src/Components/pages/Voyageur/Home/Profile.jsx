@@ -14,10 +14,11 @@ import {
 import { DatePicker } from '../../../Vol/Reservation/DatePicker';
 import { CustomSelect } from '../../../Vol/Reservation/CustomSelect';
 import { WILAYAS } from '../../../Vol/Reservation/constants/flightConstants';
-import axios from '../../../../api/axiosInstance';
+
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import axiosInstance from '../../../../api/axiosInstance';
 
 // Main color
 const MAIN_COLOR = '#00C0E8';
@@ -110,10 +111,10 @@ export default function Profile() {
   const fetchUserData = async () => {
     setIsLoading(true);
     try {
-      const meResponse = await axios.get('/auth-service/auth/me/');
+      const meResponse = await axiosInstance.get('/auth-service/auth/me/');
       const currentUser = meResponse.data;
       
-      const voyageurResponse = await axios.get(`/auth-service/auth/voyageurs/by-user/${currentUser.id}/`);
+      const voyageurResponse = await axiosInstance.get(`/auth-service/auth/voyageurs/by-user/${currentUser.id}/`);
       const voyageur = voyageurResponse.data;
       
       setUserData(currentUser);
@@ -141,7 +142,7 @@ export default function Profile() {
 
   const fetchReservations = async () => {
     try {
-      const response = await axios.get('/ms-reservation/reservations/');
+      const response = await axiosInstance.get('/ms-reservation/reservations/');
       setReservations(response.data.results || response.data || []);
       setFilteredReservations(response.data.results || response.data || []);
     } catch (error) {
@@ -169,10 +170,10 @@ export default function Profile() {
         date_exp_passport: formData.date_exp_passport
       };
       
-      await axios.patch(`/auth-service/auth/voyageurs/${voyageurData.id}/update/`, updateData);
+      await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurData.id}/update/`, updateData);
       
       if (formData.email !== voyageurData.email) {
-        await axios.patch(`/auth-service/auth/users/${userData.id}/update/`, {
+        await axiosInstance.patch(`/auth-service/auth/users/${userData.id}/update/`, {
           email: formData.email
         });
       }
@@ -201,7 +202,7 @@ export default function Profile() {
     
     setIsSaving(true);
     try {
-      await axios.post('/auth-service/auth/change-password/', {
+      await axiosInstance.post('/auth-service/auth/change-password/', {
         old_password: passwordData.old_password,
         new_password: passwordData.new_password,
         new_password_confirm: passwordData.confirm_password
@@ -228,8 +229,8 @@ export default function Profile() {
     }
     
     setIsSubmittingReport(true);
-    try {
-      await axios.post('/support-service/reports/', {
+    try { 
+      await axiosInstance.post('/support-service/reports/', {
         subject: reportData.subject || `${reportData.category.toUpperCase()} - ${new Date().toLocaleDateString()}`,
         category: reportData.category,
         message: reportData.message,
@@ -259,7 +260,7 @@ export default function Profile() {
     
     setIsSubmittingReport(true);
     try {
-      await axios.post('/support-service/refund-requests/', {
+      await axiosInstance.post('/support-service/refund-requests/', {
         reservation_id: refundReservation.id,
         reservation_number: refundReservation.reservation_number,
         reason: refundReason,
@@ -287,7 +288,7 @@ export default function Profile() {
     
     setIsSubmittingReport(true);
     try {
-      await axios.post('/support-service/cancellation-requests/', {
+      await axiosInstance.post('/support-service/cancellation-requests/', {
         reservation_id: cancelReservation.id,
         reservation_number: cancelReservation.reservation_number,
         reason: cancelReason,
