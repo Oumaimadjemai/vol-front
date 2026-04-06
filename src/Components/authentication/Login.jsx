@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import loginImage from "../../assets/images/login.png";
 import { FcGoogle } from "react-icons/fc";
-import msAuthInstance from "../../api/axiosInstance";
+import axiosInstance from "../../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 export default function Login({ onLoginSuccess, onSwitchToSignup, onSwitchToReset }) {
@@ -24,7 +24,7 @@ const {t}=useTranslation();
     setError("");
 
     try {
-      const response = await msAuthInstance.post("auth-service/auth/login/", {
+      const response = await axiosInstance.post("auth-service/auth/login/", {
         identifier,
         password,
       });

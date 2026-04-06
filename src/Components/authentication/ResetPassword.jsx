@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, CheckCircle, ArrowLeft } from "lucide-react";
-import msAuthInstance from "../../api/axiosInstance";
+import axiosInstance from "../../api/axiosInstance";
 
 export default function ForgotPassword({
   onBackToLogin,
@@ -23,7 +23,7 @@ export default function ForgotPassword({
     setLoading(true);
     try {
       // Call the password reset endpoint
-      const response = await msAuthInstance.post("auth-service/auth/password-reset/", { email });
+      const response = await axiosInstance.post("auth-service/auth/password-reset/", { email });
       console.log("Reset email sent:", response.data);
       setIsSubmitted(true);
       setError("");
@@ -45,7 +45,7 @@ export default function ForgotPassword({
   const handleResend = async () => {
     setLoading(true);
     try {
-      await msAuthInstance.post("password-reset/", { email });
+      await axiosInstance.post("password-reset/", { email });
       // Show success message (you can use a toast notification here)
       alert("Email renvoyé avec succès!");
     } catch (err) {

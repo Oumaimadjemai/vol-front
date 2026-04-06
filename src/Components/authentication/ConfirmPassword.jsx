@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Lock, CheckCircle } from 'lucide-react';
-import msAuthInstance from "../../api/axiosInstance";
+import axiosInstance from "../../api/axiosInstance";
 
 export default function ResetPassword() {
   const { uid, token } = useParams();
@@ -30,7 +30,7 @@ export default function ResetPassword() {
     setLoading(true);
     try {
       
-      const response = await msAuthInstance.post("auth-service/auth/password-reset/confirm/", {
+      const response = await axiosInstance.post("auth-service/auth/password-reset/confirm/", {
         uid,
         token,
         password,

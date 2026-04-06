@@ -33,7 +33,7 @@ import {
   Mail,
   AtSign,
 } from "lucide-react";
-import msAuthInstance from "../../../../api/axiosInstance";
+import axiosInstance from "../../../../api/axiosInstance";
 
 export default function UsersBoard() {
   const [users, setUsers] = useState([]);
@@ -75,8 +75,8 @@ export default function UsersBoard() {
     try {
       setIsInitialLoading(true);
       
-      const usersResponse = await msAuthInstance.get('/auth-service/auth/users/');
-      const voyageursResponse = await msAuthInstance.get('/auth-service/auth/voyageurs/');
+      const usersResponse = await axiosInstance.get('/auth-service/auth/users/');
+      const voyageursResponse = await axiosInstance.get('/auth-service/auth/voyageurs/');
       const voyageursMap = new Map();
       voyageursResponse.data.forEach(voyageur => {
         voyageursMap.set(voyageur.user, voyageur);
@@ -285,7 +285,7 @@ export default function UsersBoard() {
       
       if (user.role.toLowerCase() === 'voyageur') {
         try {
-          const voyageurResponse = await msAuthInstance.get(`/auth-service/auth/voyageurs/by-user/${user.id}/`);
+          const voyageurResponse = await axiosInstance.get(`/auth-service/auth/voyageurs/by-user/${user.id}/`);
           if (voyageurResponse.data) {
             telephone = voyageurResponse.data.telephone || "";
           }
@@ -321,7 +321,7 @@ export default function UsersBoard() {
   const handleSaveFeatures = async (user, features) => {
     setIsLoading(true);
     try {
-      await msAuthInstance.patch(`/auth-service/auth/users/${user.id}/update/`, {
+      await axiosInstance.patch(`/auth-service/auth/users/${user.id}/update/`, {
         features: features,
       });
       await fetchUsers();
@@ -360,11 +360,11 @@ export default function UsersBoard() {
         userUpdateData.features = validFeatures;
       }
       
-      await msAuthInstance.put(`/auth-service/auth/users/${selectedUser.id}/update/`, userUpdateData);
+      await axiosInstance.put(`/auth-service/auth/users/${selectedUser.id}/update/`, userUpdateData);
       
       if (editUser.role.toLowerCase() === 'voyageur') {
         try {
-          const voyageurResponse = await msAuthInstance.get(`/auth-service/auth/voyageurs/by-user/${selectedUser.id}/`);
+          const voyageurResponse = await axiosInstance.get(`/auth-service/auth/voyageurs/by-user/${selectedUser.id}/`);
           if (voyageurResponse.data) {
             const voyageurUpdateData = {
               telephone: editUser.telephone || "",
@@ -372,7 +372,7 @@ export default function UsersBoard() {
               prenom: editUser.name.split(' ')[0] || "",
             };
             
-            await msAuthInstance.put(`/auth-service/auth/voyageurs/${voyageurResponse.data.id}/update/`, voyageurUpdateData);
+            await axiosInstance.put(`/auth-service/auth/voyageurs/${voyageurResponse.data.id}/update/`, voyageurUpdateData);
           }
         } catch (error) {
           console.error("Erreur lors de la mise à jour du voyageur:", error);
@@ -419,7 +419,7 @@ export default function UsersBoard() {
     setIsLoading(true);
     
     try {
-      await msAuthInstance.delete(`/auth-service/auth/users/${selectedUser.id}/delete/`);
+      await axiosInstance.delete(`/auth-service/auth/users/${selectedUser.id}/delete/`);
       await fetchUsers();
       
       resetText();
@@ -448,7 +448,7 @@ export default function UsersBoard() {
     setIsLoading(true);
     try {
       const newStatus = user.status === "Suspendu" ? "Actif" : "Suspendu";
-      await msAuthInstance.patch(`/auth-service/auth/users/${user.id}/update/`, {
+      await axiosInstance.patch(`/auth-service/auth/users/${user.id}/update/`, {
         is_blocked: newStatus === "Suspendu",
         is_active: newStatus === "Actif",
       });
@@ -548,7 +548,7 @@ export default function UsersBoard() {
       };
       
       console.log("Sending voyageur signup data:", signupData);
-      response = await msAuthInstance.post('/auth-service/auth/signup/', signupData);
+      response = await axiosInstance.post('/auth-service/auth/signup/', signupData);
       
     } else {
       // CORRECTION ICI : Filtrer et mapper correctement les features
@@ -570,7 +570,7 @@ export default function UsersBoard() {
       };
       
       console.log("Sending user data:", JSON.stringify(userData, null, 2));
-      response = await msAuthInstance.post('/auth-service/auth/users/create/', userData);
+      response = await axiosInstance.post('/auth-service/auth/users/create/', userData);
     }
     
     console.log("User created successfully:", response.data);

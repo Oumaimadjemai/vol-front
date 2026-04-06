@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { agentFeatures } from './Constants';
 import FeatureCheckboxList from './FeatureCheckboxList';
-import msAuthInstance from "../../../../api/axiosInstance";
+import axiosInstance from "../../../../api/axiosInstance";
 
 const EditUserDialog = ({
   open,
@@ -41,7 +41,7 @@ const EditUserDialog = ({
         setLoadingVoyageur(true);
         try {
           // Chercher le voyageur par user ID
-          const response = await msAuthInstance.get(`/auth-service/auth/voyageurs/by-user/${user.id}/`);
+          const response = await axiosInstance.get(`/auth-service/auth/voyageurs/by-user/${user.id}/`);
           if (response.data) {
             setVoyageurData(response.data);
             onEditDataChange({

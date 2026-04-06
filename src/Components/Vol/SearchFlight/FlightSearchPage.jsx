@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import useAirports from "../../../hooks/useAirports";
 import SearchForm from "./SearchForm";
+import axiosInstance from "../../../api/axiosInstance";
 
 export default function FlightSearch() {
   const navigate = useNavigate();
@@ -78,8 +78,8 @@ export default function FlightSearch() {
       let searchData;
 
       if (activeTab === "multi") {
-        response = await axios.post(
-          "http://localhost:3002/api/flights/multi-destination",
+        response = await axiosInstance.post(
+          "/service-vols/api/flights/multi-destination",
           {
             flights: multiFlights,
             passengers,
@@ -99,7 +99,7 @@ export default function FlightSearch() {
           },
         };
       } else {
-        response = await axios.get("http://localhost:3002/api/flights/search", {
+        response = await axiosInstance.get("/service-vols/api/flights/search", {
           params: {
             origin: from,
             destination: to,

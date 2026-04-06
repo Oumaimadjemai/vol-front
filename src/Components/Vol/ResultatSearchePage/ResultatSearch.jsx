@@ -6,7 +6,8 @@ import FiltersSidebar from './FiltreSidebar';
 import SearchHeader from './SearchHeader';
 import FlightList from './FlightList';
 import useAirports from '../../../hooks/useAirports';
-import axios from 'axios';
+import axiosInstance from '../../../api/axiosInstance';
+
 
 export default function ResultatSearch() {
   const location = useLocation();
@@ -291,8 +292,8 @@ export default function ResultatSearch() {
           currency: 'DZD'
         };
 
-        response = await axios.post(
-          "http://localhost:3002/api/flights/multi-destination",
+        response = await axiosInstance.post(
+          "/service-vols/api/flights/multi-destination",
           requestData
         );
         
@@ -302,7 +303,7 @@ export default function ResultatSearch() {
           params: { flights: multiFlights, passengers, travelClass: flightClass, options } 
         };
       } else {
-        response = await axios.get("http://localhost:3002/api/flights/search", {
+        response = await axiosInstance.get("/service-vols/api/flights/search", {
           params: {
             origin: from,
             destination: to,
