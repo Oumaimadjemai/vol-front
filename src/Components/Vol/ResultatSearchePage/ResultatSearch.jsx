@@ -333,6 +333,31 @@ export default function ResultatSearch() {
       setIsSearching(false);
     }
   };
+  // Add this function in your ResultatSearch component
+const handleReserver = (vol) => {
+  console.log('Réservation:', vol);
+  
+  // Prepare complete reservation data
+  const reservationData = {
+    flight: vol,
+    isMulti: isMulti,
+    passengers: passengers,
+    passengersCount: totalPassengers,
+    searchParams: {
+      type: activeTab,
+      from: from,
+      to: to,
+      departureDate: departureDate,
+      returnDate: returnDate,
+      flightClass: flightClass,
+      options: options,
+      multiFlights: multiFlights
+    }
+  };
+  
+  // Navigate to reservation page with data
+  navigate('/reservation', { state: { reservationData } });
+};
 
   // ========== GESTION UI ==========
   const handleFormClick = () => setShowAdvancedOptions(true);
@@ -343,7 +368,7 @@ export default function ResultatSearch() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen ">
       <div className="max-w-7xl mx-auto p-6">
 
         {/* Bouton retour */}
