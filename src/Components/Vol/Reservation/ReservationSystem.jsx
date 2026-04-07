@@ -1,7 +1,7 @@
 // ReservationSystem.jsx - Complete fixed version
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaChevronLeft, FaChevronRight, FaEnvelope, FaPhone, FaCreditCard, FaMoneyBill, FaShieldAlt, FaCheck, FaWhatsapp, FaDownload, FaPrint, FaUserEdit, FaTimes, FaSave, FaUser, FaIdCard, FaCalendarAlt, FaPassport, FaCamera, FaUpload, FaTrash, FaImage } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaEnvelope, FaPhone, FaCreditCard, FaMoneyBill, FaShieldAlt, FaCheck, FaWhatsapp, FaDownload, FaPrint, FaUserEdit, FaTimes, FaSave, FaUser, FaIdCard, FaCalendarAlt, FaPassport, FaCamera, FaUpload, FaTrash, FaImage, FaInfoCircle, FaPlane } from 'react-icons/fa';
 import { DatePicker } from './DatePicker';
 import { CustomSelect } from './CustomSelect';
 import { FlightDetailsCard } from './FlightDetailsCard';
@@ -11,6 +11,7 @@ import { Sidebar } from './Sidebar';
 import { PassengerFormComponent } from './PassengerFormComponent';
 import { WILAYAS, getCityFromAirport } from './constants/flightConstants';
 import axiosInstance from '../../../api/axiosInstance';
+import { toast } from 'sonner';
 
 
 export default function ReservationSystem({ reservationData }) {
@@ -1150,36 +1151,344 @@ const prepareReservationData = () => {
 }
 
 // ConfirmationPage component
-const ConfirmationPage = ({ reservationId, bookingResponse, isRoundTrip }) => (
-  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
-    className="bg-white rounded-2xl shadow-xl overflow-hidden">
-    <div className="bg-gradient-to-r from-green-500 to-green-600 px-8 py-12 text-center">
-      <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6">
-        <FaCheck className="w-10 h-10 text-green-500" />
+// ConfirmationPage component - Complete version with ticket generation
+const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRoundTrip, passengers, totalPrice }) => {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  
+  // Extract PNR from booking response
+  const pnr = bookingResponse?.pnr || bookingResponse?.amadeus_pnr || bookingResponse?.bookingCode || 'N/A';
+  const status = bookingResponse?.status || 'CONFIRMED';
+  const paymentStatus = bookingResponse?.payment_status || 'COMPLETED';
+  const totalPriceValue = bookingResponse?.total_price || totalPrice || '0 DZD';
+  
+  const generateTicketPDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      // Create ticket data
+      const ticketData = {
+        reservationNumber: reservationId,
+        pnr: pnr,
+        bookingDate: new Date().toLocaleDateString('fr-FR'),
+        flightDetails: flightDetails,
+        passengers: passengers,
+        totalPrice: totalPriceValue,
+        isRoundTrip: isRoundTrip
+      };
+      
+      // Call your PDF generation endpoint or use jsPDF
+      const response = await axiosInstance.post('/ms-reservation/reservations/generate-ticket/', ticketData, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `billet_${reservationId}_${pnr}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Billet téléchargé avec succès');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erreur lors de la génération du billet');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+  
+  const shareViaWhatsApp = () => {
+    const message = `*Confirmation de réservation FlyExpress* 🎫\n\n` +
+      `📋 Numéro: ${reservationId}\n` +
+      `🔖 Code PNR: ${pnr}\n` +
+      `✅ Statut: ${status}\n` +
+      `💰 Total: ${totalPriceValue}\n\n` +
+      `Merci de votre confiance ! ✈️`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+  };
+  
+  const printTicket = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Billet d'avion - ${reservationId}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+          .ticket { max-width: 800px; margin: 0 auto; border: 2px solid #00C0E8; border-radius: 10px; overflow: hidden; }
+          .header { background: linear-gradient(135deg, #00C0E8, #0096b8); color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; }
+          .row { display: flex; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+          .label { flex: 1; font-weight: bold; color: #666; }
+          .value { flex: 2; color: #333; }
+          .flight-info { background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 15px 0; }
+          .footer { background: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #999; }
+          @media print {
+            body { margin: 0; padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="ticket">
+          <div class="header">
+            <h2>FlyExpress - Billet d'avion</h2>
+            <p>Confirmation de réservation</p>
+          </div>
+          <div class="content">
+            <div class="row">
+              <div class="label">Numéro de réservation:</div>
+              <div class="value">${reservationId}</div>
+            </div>
+            <div class="row">
+              <div class="label">Code PNR:</div>
+              <div class="value"><strong>${pnr}</strong></div>
+            </div>
+            <div class="row">
+              <div class="label">Statut:</div>
+              <div class="value">${status}</div>
+            </div>
+            <div class="row">
+              <div class="label">Paiement:</div>
+              <div class="value">${paymentStatus}</div>
+            </div>
+            <div class="row">
+              <div class="label">Total payé:</div>
+              <div class="value"><strong>${totalPriceValue}</strong></div>
+            </div>
+            
+            <div class="flight-info">
+              <h3>Détails du vol</h3>
+              ${flightDetails?.type === 'multi' ? `
+                ${flightDetails.segments.map((segment, idx) => `
+                  <div style="margin-bottom: 15px;">
+                    <strong>Segment ${idx + 1}: ${segment.departure.city} → ${segment.arrival.city}</strong><br>
+                    Vol: ${segment.airline} ${segment.flightNumber}<br>
+                    Départ: ${segment.departure.date} à ${segment.departure.time}<br>
+                    Arrivée: ${segment.arrival.date} à ${segment.arrival.time}
+                  </div>
+                `).join('')}
+              ` : `
+                <div><strong>Aller:</strong> ${flightDetails?.outbound?.departure?.city} → ${flightDetails?.outbound?.arrival?.city}</div>
+                <div>Date: ${flightDetails?.outbound?.departure?.date}</div>
+                <div>Départ: ${flightDetails?.outbound?.departure?.time} | Arrivée: ${flightDetails?.outbound?.arrival?.time}</div>
+                <div>Vol: ${flightDetails?.outbound?.airline} ${flightDetails?.outbound?.flightNumber}</div>
+                ${isRoundTrip && flightDetails?.return ? `
+                  <div style="margin-top: 15px;"><strong>Retour:</strong> ${flightDetails.return.departure.city} → ${flightDetails.return.arrival.city}</div>
+                  <div>Date: ${flightDetails.return.departure.date}</div>
+                  <div>Départ: ${flightDetails.return.departure.time} | Arrivée: ${flightDetails.return.arrival.time}</div>
+                  <div>Vol: ${flightDetails.return.airline} ${flightDetails.return.flightNumber}</div>
+                ` : ''}
+              `}
+            </div>
+            
+            <div class="flight-info">
+              <h3>Passagers</h3>
+              ${passengers && passengers.length > 0 ? `
+                ${passengers.map((p, idx) => `
+                  <div>${idx + 1}. ${p.prenom || p.firstName} ${p.nom || p.lastName}</div>
+                `).join('')}
+              ` : '<div>1 passager</div>'}
+            </div>
+          </div>
+          <div class="footer">
+            <p>Merci d'avoir choisi FlyExpress! Présentez ce billet à l'embarquement.</p>
+            <p>Pour toute assistance, contactez-nous au +213 XXX XXX XXX</p>
+          </div>
+        </div>
+        <div class="no-print" style="text-align: center; margin-top: 20px;">
+          <button onclick="window.print()" style="padding: 10px 20px; background: #00C0E8; color: white; border: none; border-radius: 5px; cursor: pointer;">Imprimer</button>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }} 
+      animate={{ opacity: 1, scale: 1 }} 
+      transition={{ duration: 0.5 }}
+      className="bg-white rounded-2xl shadow-xl overflow-hidden"
+    >
+      <div className="bg-gradient-to-r from-green-500 to-green-600 px-8 py-12 text-center">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6">
+          <FaCheck className="w-10 h-10 text-green-500" />
+        </div>
+        <h2 className="text-3xl font-bold text-white mb-2">Réservation Confirmée !</h2>
+        <p className="text-green-100">Votre réservation a été effectuée avec succès</p>
       </div>
-      <h2 className="text-3xl font-bold text-white mb-2">Réservation Confirmée !</h2>
-      <p className="text-green-100">Votre réservation a été effectuée avec succès</p>
-    </div>
-    <div className="p-8">
-      <div className="bg-gray-50 rounded-xl p-6 mb-8">
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div><p className="text-sm text-gray-500">Numéro de réservation</p><p className="text-2xl font-bold text-gray-800">{reservationId}</p></div>
-          <div><p className="text-sm text-gray-500">Code de réservation</p><p className="text-2xl font-bold text-[#00C0E8]">{bookingResponse?.bookingCode || 'N/A'}</p></div>
-          <div><p className="text-sm text-gray-500">Type de vol</p><p className="text-lg font-semibold text-gray-800">{isRoundTrip ? 'Aller-Retour' : 'Aller Simple'}</p></div>
-          <div><p className="text-sm text-gray-500">Statut</p><span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold"><FaCheck className="w-3 h-3" /> Confirmé</span></div>
+      
+      <div className="p-8">
+        {/* Reservation Summary */}
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-500">Numéro de réservation</p>
+              <p className="text-xl font-bold text-gray-800">{reservationId}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Code PNR</p>
+              <p className="text-xl font-bold font-mono text-[#00C0E8]">{pnr}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Statut</p>
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                <FaCheck className="w-3 h-3" /> {status}
+              </span>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total payé</p>
+              <p className="text-xl font-bold text-gray-800">{totalPriceValue}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Flight Details */}
+        {flightDetails && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <FaPlane className="text-[#00C0E8]" />
+              Détails du vol
+            </h3>
+            
+            {flightDetails.type === 'multi' ? (
+              <div className="space-y-4">
+                {flightDetails.segments.map((segment, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="font-semibold">{segment.departure.city} → {segment.arrival.city}</div>
+                      <div className="text-sm text-gray-500">Vol {segment.airline} {segment.flightNumber}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Départ</p>
+                        <p className="font-semibold">{segment.departure.date} à {segment.departure.time}</p>
+                        <p className="text-xs text-gray-500">{segment.departure.airport}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Arrivée</p>
+                        <p className="font-semibold">{segment.arrival.date} à {segment.arrival.time}</p>
+                        <p className="text-xs text-gray-500">{segment.arrival.airport}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="font-semibold">{flightDetails.outbound.departure.city} → {flightDetails.outbound.arrival.city}</div>
+                    <div className="text-sm text-gray-500">Vol {flightDetails.outbound.airline} {flightDetails.outbound.flightNumber}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Départ</p>
+                      <p className="font-semibold">{flightDetails.outbound.departure.date} à {flightDetails.outbound.departure.time}</p>
+                      <p className="text-xs text-gray-500">{flightDetails.outbound.departure.airport}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Arrivée</p>
+                      <p className="font-semibold">{flightDetails.outbound.arrival.date} à {flightDetails.outbound.arrival.time}</p>
+                      <p className="text-xs text-gray-500">{flightDetails.outbound.arrival.airport}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {isRoundTrip && flightDetails.return && (
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="font-semibold">{flightDetails.return.departure.city} → {flightDetails.return.arrival.city}</div>
+                      <div className="text-sm text-gray-500">Vol {flightDetails.return.airline} {flightDetails.return.flightNumber}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Départ</p>
+                        <p className="font-semibold">{flightDetails.return.departure.date} à {flightDetails.return.departure.time}</p>
+                        <p className="text-xs text-gray-500">{flightDetails.return.departure.airport}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Arrivée</p>
+                        <p className="font-semibold">{flightDetails.return.arrival.date} à {flightDetails.return.arrival.time}</p>
+                        <p className="text-xs text-gray-500">{flightDetails.return.arrival.airport}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Passengers List */}
+        {passengers && passengers.length > 0 && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <FaUser className="text-[#00C0E8]" />
+              Passagers ({passengers.length})
+            </h3>
+            <div className="space-y-2">
+              {passengers.map((passenger, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                  <div className="font-semibold">{passenger.prenom || passenger.firstName} {passenger.nom || passenger.lastName}</div>
+                  {passenger.num_passport && (
+                    <div className="text-sm text-gray-500">Passeport: {passenger.num_passport}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-4">
+          <button 
+            onClick={printTicket}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:border-[#00C0E8] hover:text-[#00C0E8] transition-all"
+          >
+            <FaPrint /> Imprimer le billet
+          </button>
+          
+          <button 
+            onClick={generateTicketPDF}
+            disabled={isGeneratingPDF}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[#00C0E8] text-white rounded-xl font-semibold hover:bg-[#0096b8] transition-all disabled:opacity-50"
+          >
+            {isGeneratingPDF ? (
+              <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Génération...</>
+            ) : (
+              <><FaDownload /> Télécharger PDF</>
+            )}
+          </button>
+          
+          <button 
+            onClick={shareViaWhatsApp}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-all"
+          >
+            <FaWhatsapp /> Partager
+          </button>
+        </div>
+        
+        {/* Info Message */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="flex items-start gap-2">
+            <FaInfoCircle className="text-blue-500 mt-0.5" />
+            <div className="text-sm text-blue-800">
+              <p className="font-semibold mb-1">Informations importantes:</p>
+              <p>✓ Présentez-vous à l'aéroport 2 heures avant le départ</p>
+              <p>✓ Munissez-vous de votre pièce d'identité et de ce billet</p>
+              <p>✓ Pour toute modification, contactez notre service client</p>
+            </div>
+          </div>
         </div>
       </div>
-      {bookingResponse && (
-        <div className="bg-blue-50 rounded-xl p-4 mb-6">
-          <h4 className="font-semibold text-blue-800 mb-2">Détails de la réservation</h4>
-          <pre className="text-xs text-blue-700 overflow-auto max-h-60">{JSON.stringify(bookingResponse, null, 2)}</pre>
-        </div>
-      )}
-      <div className="flex flex-wrap gap-4">
-        <button onClick={() => window.print()} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:border-[#00C0E8] hover:text-[#00C0E8] transition-all"><FaPrint /> Imprimer</button>
-        <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[#00C0E8] text-white rounded-xl font-semibold hover:bg-[#0096b8] transition-all"><FaDownload /> Télécharger</button>
-        <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-all"><FaWhatsapp /> Partager</button>
-      </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};

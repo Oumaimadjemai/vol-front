@@ -28,6 +28,7 @@ import ResultatSearch from "../Components/Vol/ResultatSearchePage/ResultatSearch
 import ReservationSystem from "../Components/Vol/Reservation/ReservationSystem";
 import Reservation from "../Components/Vol/Reservation/Reservation";
 import Profile from "../Components/pages/Voyageur/Home/Profile";
+import { Bookings } from "../Components/pages/Admin/Booking/Booking";
 
 export default function AppRoutes() {
   return (
@@ -52,6 +53,8 @@ export default function AppRoutes() {
       <Route element={<AdminLayout />}>
         <Route path="/admin" element={<Dashboard/>} />
         <Route path="/admin/users" element={<UsersBoard/>} />
+        <Route path="/admin/reservations" element={<Bookings/>} />
+
       </Route>
       
       {/* ADMIN PROTECTED - COMMENTED OUT FOR NOW */}
