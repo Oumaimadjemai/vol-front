@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, Plane, AlertCircle, Shield, UserCog, ArrowRight, Sparkles, X } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function LoginAdmin() {
   const [showPassword, setShowPassword] = useState(false);
@@ -33,40 +34,55 @@ export default function LoginAdmin() {
         password,
       });
       
-      console.log("Login success", response);
+      console.log("Login response:", response.data);
       
-      // Store tokens in sessionStorage only (no remember me)
-      sessionStorage.setItem("access_token", response.data.access);
-      sessionStorage.setItem("refresh_token", response.data.refresh);
+      // Store tokens in localStorage (not sessionStorage)
+      const { access, refresh, role, user_id, username } = response.data;
       
-      localStorage.setItem("role", response.data.role);
-      localStorage.setItem("user_id", response.data.user_id);
-      localStorage.setItem("username", response.data.username || identifier);
+      localStorage.setItem("access_token", access);
+      localStorage.setItem("refresh_token", refresh);
+      localStorage.setItem("role", role);
+      localStorage.setItem("user_id", user_id);
+      localStorage.setItem("username", username || identifier);
       
-      const userRole = response.data.role;
+      console.log("Tokens stored in localStorage");
+      console.log("Role:", role);
       
-      if (userRole === "admin" || userRole === "agent") {
-        // Success animation before redirect
+      // Verify tokens were stored
+      console.log("Access token stored:", !!localStorage.getItem("access_token"));
+      console.log("Refresh token stored:", !!localStorage.getItem("refresh_token"));
+      
+      // Check if user has admin or agent role
+      if (role === "admin" || role === "agent") {
+        toast.success(`Bienvenue ${username || identifier}!`);
+        
+        // Redirect to admin dashboard
         setTimeout(() => {
           navigate("/admin", { replace: true });
         }, 500);
       } else {
         setError("Accès non autorisé. Cette page est réservée aux administrateurs et agents.");
-        sessionStorage.removeItem("access_token");
-        sessionStorage.removeItem("refresh_token");
+        // Clear tokens if role is not authorized
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
         localStorage.removeItem("role");
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("username");
       }
       
     } catch (err) {
       console.error("Login error:", err);
       
       if (err.response) {
+        console.error("Error response:", err.response.data);
+        console.error("Error status:", err.response.status);
+        
         if (err.response.status === 401) {
           setError("Email ou mot de passe incorrect");
         } else if (err.response.status === 403) {
           setError("Accès refusé. Vérifiez vos permissions.");
         } else if (err.response.data && err.response.data.non_field_errors) {
-          setError(err.response.data.non_field_errors[0] || "Email ou mot de passe incorrect");
+          setError(err.response.data.non_field_errors[0]);
         } else if (err.response.data && err.response.data.detail) {
           setError(err.response.data.detail);
         } else if (err.response.data && err.response.data.error) {
@@ -95,14 +111,12 @@ export default function LoginAdmin() {
     setResetMessage("");
 
     try {
-      // Adjust this endpoint according to your API
       const response = await axiosInstance.post("auth-service/auth/password-reset/", {
         email: resetEmail,
       });
       
       setResetMessage("Un email de réinitialisation a été envoyé à votre adresse email.");
       
-      // Close dialog after 3 seconds
       setTimeout(() => {
         setIsForgotPasswordOpen(false);
         setResetEmail("");
@@ -127,7 +141,7 @@ export default function LoginAdmin() {
     }
   };
 
-  // Animation variants
+  // Animation variants (keep as is)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -223,7 +237,7 @@ export default function LoginAdmin() {
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
       
-      {/* LEFT SIDE - Animated with Framer Motion */}
+      {/* LEFT SIDE */}
       <motion.div
         variants={leftSideVariants}
         initial="hidden"
@@ -367,7 +381,7 @@ export default function LoginAdmin() {
         </motion.p>
       </motion.div>
 
-      {/* RIGHT SIDE - Animated with Framer Motion */}
+      {/* RIGHT SIDE */}
       <motion.div
         variants={rightSideVariants}
         initial="hidden"
@@ -407,7 +421,7 @@ export default function LoginAdmin() {
             </motion.p>
           </div>
 
-          {/* Error message with animation */}
+          {/* Error message */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -562,7 +576,7 @@ export default function LoginAdmin() {
           <motion.button
             onClick={handleLogin}
             disabled={isLoading}
-            className="login-button w-full bg-gradient-to-r from-[#00C0E8] to-[#00a8cc] hover:from-[#00a8cc] hover:to-[#0096b8] text-white py-3 rounded-lg font-semibold transition-all duration-300 relative overflow-hidden group"
+            className="w-full bg-gradient-to-r from-[#00C0E8] to-[#00a8cc] hover:from-[#00a8cc] hover:to-[#0096b8] text-white py-3 rounded-lg font-semibold transition-all duration-300 relative overflow-hidden group"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             variants={itemVariants}
@@ -570,12 +584,7 @@ export default function LoginAdmin() {
             animate="visible"
             transition={{ delay: 0.8 }}
           >
-            <motion.span
-              className="relative z-10 flex items-center justify-center gap-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
-            >
+            <span className="relative z-10 flex items-center justify-center gap-2">
               {isLoading ? (
                 <>
                   <motion.div
@@ -596,7 +605,7 @@ export default function LoginAdmin() {
                   </motion.div>
                 </>
               )}
-            </motion.span>
+            </span>
             {!isLoading && (
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"
@@ -632,7 +641,6 @@ export default function LoginAdmin() {
       <AnimatePresence>
         {isForgotPasswordOpen && (
           <>
-            {/* Overlay */}
             <motion.div
               variants={overlayVariants}
               initial="hidden"
@@ -642,7 +650,6 @@ export default function LoginAdmin() {
               onClick={() => setIsForgotPasswordOpen(false)}
             />
 
-            {/* Modal */}
             <motion.div
               variants={modalVariants}
               initial="hidden"
@@ -667,7 +674,6 @@ export default function LoginAdmin() {
                   Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
                 </p>
 
-                {/* Reset success message */}
                 <AnimatePresence>
                   {resetMessage && (
                     <motion.div
@@ -681,7 +687,6 @@ export default function LoginAdmin() {
                   )}
                 </AnimatePresence>
 
-                {/* Reset error message */}
                 <AnimatePresence>
                   {resetError && (
                     <motion.div

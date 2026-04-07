@@ -15,7 +15,7 @@ import { Button } from "@mui/material";
 
 const navItems = [
   { path: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
-  { path: "/admin/bookings", label: "Réservations", icon: Calendar },
+  { path: "/admin/reservations", label: "Réservations", icon: Calendar },
   { path: "/admin/destinations", label: "Destinations", icon: MapPin },
   { path: "/admin/users", label: "Utilisateurs", icon: Users },
   { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
