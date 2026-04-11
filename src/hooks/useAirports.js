@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 
 export default function useAirports() {
   const [airports, setAirports] = useState([]);
@@ -10,7 +10,7 @@ export default function useAirports() {
     const fetchAirports = async () => {
       try {
         console.log(" Chargement des aéroports...");
-        const response = await axios.get("http://localhost:3002/api/airports");
+        const response = await axiosInstance.get("service-vols/api/airports");
         
         if (response.data?.data) {
           setAirports(response.data.data);

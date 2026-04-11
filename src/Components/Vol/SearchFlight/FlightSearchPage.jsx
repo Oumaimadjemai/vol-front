@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import useAirports from "../../../hooks/useAirports";
 import SearchForm from "./SearchForm";
 import axiosInstance from "../../../api/axiosInstance";
+import { useUserRole } from "../../../hooks/useUserRole";
 
 export default function FlightSearch() {
   const navigate = useNavigate();
+  const { role, loading: roleLoading } = useUserRole();
   const today = new Date().toISOString().split("T")[0];
   const [activeTab, setActiveTab] = useState("aller");
   const [departureDate, setDepartureDate] = useState("");
@@ -25,7 +27,9 @@ export default function FlightSearch() {
   const [passengers, setPassengers] = useState({ adult: 1, child: 0, baby: 0 });
   const [isSearching, setIsSearching] = useState(false);
 
+  const isAdmin = role === "admin";
   const totalPassengers = passengers.adult + passengers.child + passengers.baby;
+  
   const changeCount = (type, value) => {
     setPassengers((prev) => {
       const newValue = prev[type] + value;
@@ -130,9 +134,12 @@ export default function FlightSearch() {
         };
       }
 
-      navigate("/results", {
-        state: searchData,
-      });
+      // Role-based navigation
+      if (isAdmin) {
+        navigate("/admin/results", { state: searchData });
+      } else {
+        navigate("/results", { state: searchData });
+      }
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || "Erreur recherche vols");
@@ -141,17 +148,29 @@ export default function FlightSearch() {
     }
   };
 
+  if (roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00C0E8]"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen  w-full p-6">
-      <div className="w-full ">
-        <h3 className="text-4xl text-gray-800 mb-2 text-left font-playfair font-bold">
-          Réservez maintenant
-        </h3>
-        <div className="w-40 h-1 bg-[#00C0E8] mb-8 rounded"></div>
+    <div className="min-h-screen w-full p-6">
+      <div className="w-full">
+        {/* Hide "Réservez maintenant" for admin users */}
+        {!isAdmin && (
+          <>
+            <h3 className="text-4xl text-gray-800 mb-2 text-left font-playfair font-bold">
+              Réservez maintenant
+            </h3>
+            <div className="w-40 h-1 bg-[#00C0E8] mb-8 rounded"></div>
+          </>
+        )}
       </div>
       <div className="flex justify-center">
         <div className="w-full max-w-6xl">
-          {" "}
           <SearchForm
             activeTab={activeTab}
             setActiveTab={setActiveTab}

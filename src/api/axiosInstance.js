@@ -43,20 +43,23 @@ axiosInstance.interceptors.response.use(
     
     console.log('Response error:', error.response?.status, error.config?.url);
     
+    // Check if it's a 401 error and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
+      const refreshToken = localStorage.getItem('refresh_token');
+      
+      // If no refresh token exists, user is not authenticated
+      // Don't attempt to refresh, just reject and let the app handle it
+      if (!refreshToken) {
+        console.log('No refresh token available - user is not authenticated');
+        // Don't clear localStorage or redirect here
+        // Let the component handle the unauthenticated state
+        return Promise.reject(error);
+      }
+      
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
         console.log('Attempting to refresh token...');
-        
-        if (!refreshToken) {
-          console.error('No refresh token available');
-          // Clear localStorage and redirect to login
-          localStorage.clear();
-          window.location.href = '/';
-          return Promise.reject(error);
-        }
         
         const response = await axios.post('http://localhost:8080/auth-service/auth/refresh/', {
           refresh: refreshToken
@@ -71,7 +74,8 @@ axiosInstance.interceptors.response.use(
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
-        // Clear localStorage and redirect to login
+        // Only clear storage and redirect if refresh actually fails
+        // This means the refresh token is invalid or expired
         localStorage.clear();
         window.location.href = '/';
         return Promise.reject(refreshError);

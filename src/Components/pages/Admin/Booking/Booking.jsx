@@ -1,222 +1,192 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search, Eye, Download, Calendar, CheckCircle, XCircle, Clock, Plus, Plane, Users, CreditCard, MapPin, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import FlightSearch from "../../../Vol/SearchFlight/FlightSearchPage";
+import { useUserRole } from "../../../../hooks/useUserRole";
+import axiosInstance from "../../../../api/axiosInstance";
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
-import axiosInstance, { isAuthenticated, logout } from "../../../../api/axiosInstance";
+// Card Component
+const Card = ({ children, className = "" }) => (
+  <div className={`bg-white rounded-2xl shadow-md ${className}`}>{children}</div>
+);
 
-// Status Badge Component
-const StatusBadge = ({ status }) => {
-  const config = {
-    CONFIRMED: { label: "Confirmé", bg: "bg-green-100", text: "text-green-800", icon: "✓" },
-    CANCELLED: { label: "Annulé", bg: "bg-red-100", text: "text-red-800", icon: "✗" },
-    PENDING_PRICE: { label: "En attente", bg: "bg-yellow-100", text: "text-yellow-800", icon: "⏳" },
-    PRICE_CONFIRMED: { label: "Prix confirmé", bg: "bg-blue-100", text: "text-blue-800", icon: "✓" },
-    FAILED: { label: "Échoué", bg: "bg-red-100", text: "text-red-800", icon: "✗" },
-    EXPIRED: { label: "Expiré", bg: "bg-gray-100", text: "text-gray-800", icon: "⌛" },
+const CardContent = ({ children, className = "" }) => (
+  <div className={`p-6 ${className}`}>{children}</div>
+);
+
+// Badge Component
+const Badge = ({ children, className = "" }) => (
+  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}>
+    {children}
+  </span>
+);
+
+// Button Component
+const Button = ({ children, onClick, variant = "default", className = "", disabled = false }) => {
+  const baseStyles = "inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const variants = {
+    default: "bg-[#00C0E8] text-white hover:bg-[#00a8cc] focus:ring-[#00C0E8]",
+    outline: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500",
+    destructive: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600",
+    ghost: "text-gray-600 hover:bg-gray-100 focus:ring-gray-500",
   };
-  const { label, bg, text, icon } = config[status] || config.PENDING_PRICE;
-  
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${bg} ${text}`}>
-      <span>{icon}</span>
-      {label}
-    </span>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseStyles} ${variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
   );
 };
 
-// Stat Card Component
-const StatCard = ({ title, value, icon, color }) => (
-  <div className={`bg-gradient-to-r ${color} rounded-xl p-4 text-white shadow-lg`}>
-    <div className="flex justify-between items-center">
-      <div>
-        <p className="text-sm opacity-80">{title}</p>
-        <p className="text-2xl font-bold mt-1">{value}</p>
+// Input Component
+const Input = ({ placeholder, value, onChange, className = "" }) => (
+  <input
+    type="text"
+    placeholder={placeholder}
+    value={value}
+    onChange={onChange}
+    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C0E8] focus:border-transparent transition-all ${className}`}
+  />
+);
+
+// Dialog Component
+const Dialog = ({ children, open, onClose }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        {children}
+        <div className="flex justify-end p-6 border-t border-gray-200 gap-2 sticky bottom-0 bg-white">
+          <Button onClick={onClose} variant="outline">
+            Fermer
+          </Button>
+        </div>
       </div>
-      <div className="text-2xl">{icon}</div>
     </div>
+  );
+};
+
+const DialogHeader = ({ children }) => (
+  <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">{children}</div>
+);
+
+const DialogTitle = ({ children }) => (
+  <h2 className="text-xl font-semibold text-gray-900">{children}</h2>
+);
+
+const DialogDescription = ({ children }) => (
+  <p className="text-sm text-gray-600 mt-1">{children}</p>
+);
+
+// Table Components
+const Table = ({ children }) => (
+  <div className="overflow-x-auto">
+    <table className="min-w-full divide-y divide-gray-200">{children}</table>
   </div>
 );
 
+const TableHeader = ({ children }) => (
+  <thead className="bg-gray-50">{children}</thead>
+);
+
+const TableBody = ({ children }) => (
+  <tbody className="bg-white divide-y divide-gray-200">{children}</tbody>
+);
+
+const TableRow = ({ children, className = "" }) => (
+  <tr className={`hover:bg-gray-50 transition-colors ${className}`}>{children}</tr>
+);
+
+const TableHead = ({ children, className = "" }) => (
+  <th className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${className}`}>
+    {children}
+  </th>
+);
+
+const TableCell = ({ children, className = "" }) => (
+  <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${className}`}>
+    {children}
+  </td>
+);
+
 export function Bookings() {
+  const navigate = useNavigate();
+  const { role, loading: roleLoading } = useUserRole();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedBookingDetails, setSelectedBookingDetails] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [reservations, setReservations] = useState([]);
+  const [activeTab, setActiveTab] = useState("bookings");
+  const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const [stats, setStats] = useState({
-    total: 0,
-    confirmed: 0,
-    pending: 0,
-    cancelled: 0,
-    failed: 0,
-    expired: 0,
-    totalRevenue: 0,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    // Check authentication before loading
-    if (!isAuthenticated()) {
-      toast.error("Veuillez vous connecter pour accéder à cette page");
-      logout();
-      return;
-    }
-    fetchAllReservations();
-  }, []);
+  const isAdmin = role === "admin";
 
-  // Fetch all reservations with pagination handling
-  const fetchAllReservations = async () => {
-    setIsLoading(true);
+  // Fetch all bookings with pagination
+  const fetchBookings = async (page = 1) => {
     try {
-      let allReservations = [];
-      let page = 1;
-      let hasMore = true;
+      setIsLoading(true);
+      const response = await axiosInstance.get(`/ms-reservation/reservations/?page=${page}`);
+      const data = response.data;
       
-      // First, test if we can access the API with current token
-      const testResponse = await axiosInstance.get('/ms-reservation/reservations/');
-      console.log('API access test:', testResponse.status);
+      // Transform to display format using the enriched data from backend
+      const formattedBookings = data.results.map(res => ({
+        id: res.id,
+        reservation_number: res.reservation_number,
+        voyageur_id: res.voyageur,
+        status: getStatusLabel(res.status),
+        original_status: res.status,
+        trip_type: res.trip_type,
+        total_price: `${parseFloat(res.total_price).toLocaleString()} ${res.currency}`,
+        total_price_raw: parseFloat(res.total_price),
+        currency: res.currency,
+        created_at: res.created_at,
+        amadeus_pnr: res.amadeus_pnr,
+        passenger_count: res.passenger_count || 0,
+        passenger_names: res.passenger_names || [],
+        flight_origin: res.flight_origin,
+        flight_destination: res.flight_destination,
+        departure_date: res.departure_date,
+        can_cancel: res.status === "CONFIRMED",
+      }));
       
-      // Fetch all pages
-      while (hasMore) {
-        try {
-          console.log(`Fetching page ${page}...`);
-          const response = await axiosInstance.get(`/ms-reservation/reservations/?page=${page}`);
-          const data = response.data;
-          
-          if (data.results && data.results.length > 0) {
-            allReservations = [...allReservations, ...data.results];
-            page++;
-            hasMore = data.next !== null;
-            console.log(`Page ${page-1} fetched: ${data.results.length} reservations`);
-          } else {
-            hasMore = false;
-          }
-        } catch (error) {
-          console.error(`Error fetching page ${page}:`, error);
-          if (error.response?.status === 401) {
-            toast.error("Session expirée, veuillez vous reconnecter");
-            logout();
-            return;
-          }
-          hasMore = false;
-        }
-      }
-      
-      console.log("Total reservations fetched:", allReservations.length);
-      setReservations(allReservations);
-      
-      // Calculate stats
-      const confirmed = allReservations.filter(r => r.status === "CONFIRMED").length;
-      const pending = allReservations.filter(r => r.status === "PENDING_PRICE" || r.status === "PRICE_CONFIRMED").length;
-      const cancelled = allReservations.filter(r => r.status === "CANCELLED").length;
-      const failed = allReservations.filter(r => r.status === "FAILED").length;
-      const expired = allReservations.filter(r => r.status === "EXPIRED").length;
-      const totalRevenue = allReservations
-        .filter(r => r.status === "CONFIRMED")
-        .reduce((sum, r) => sum + parseFloat(r.total_price || 0), 0);
-      
-      setStats({
-        total: allReservations.length,
-        confirmed,
-        pending,
-        cancelled,
-        failed,
-        expired,
-        totalRevenue,
-      });
-      
-      if (allReservations.length > 0) {
-        toast.success(`${allReservations.length} réservations chargées`);
-      } else {
-        toast.info("Aucune réservation trouvée");
-      }
+      setBookings(formattedBookings);
+      setTotalCount(data.count);
+      setTotalPages(Math.ceil(data.count / 10));
+      setCurrentPage(page);
     } catch (error) {
-      console.error("Error fetching reservations:", error);
-      if (error.response?.status === 401) {
-        toast.error("Session expirée, veuillez vous reconnecter");
-        logout();
-      } else {
-        toast.error("Erreur lors du chargement des réservations");
-      }
+      console.error("Error fetching bookings:", error);
+      toast.error("Erreur lors du chargement des réservations");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchReservationDetails = async (reservationId) => {
+  useEffect(() => {
+    fetchBookings(1);
+  }, []);
+
+  // Fetch full details including passengers and flight segments
+  const fetchBookingDetails = async (bookingId) => {
     setIsLoadingDetails(true);
     try {
-      const response = await axiosInstance.get(`/ms-reservation/reservations/${reservationId}/full-details/`);
+      const response = await axiosInstance.get(`/ms-reservation/reservations/${bookingId}/full-details/`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching details:", error);
-      if (error.response?.status === 401) {
-        toast.error("Session expirée, veuillez vous reconnecter");
-        logout();
-      } else {
-        toast.error("Erreur lors du chargement des détails");
-      }
+      console.error("Error fetching booking details:", error);
+      toast.error("Erreur lors du chargement des détails");
       return null;
     } finally {
       setIsLoadingDetails(false);
-    }
-  };
-
-  const fetchVoyageurDetails = async (voyageurId) => {
-    try {
-      const response = await axiosInstance.get(`/auth-service/auth/voyageurs/${voyageurId}/`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching voyageur:", error);
-      return null;
-    }
-  };
-
-  const handleViewDetails = async (booking) => {
-    setSelectedBooking(null);
-    setDialogOpen(true);
-    
-    const details = await fetchReservationDetails(booking.id);
-    
-    if (details) {
-      if (details.voyageur) {
-        const voyageurDetails = await fetchVoyageurDetails(details.voyageur);
-        setSelectedBooking({ ...details, voyageur_details: voyageurDetails });
-      } else {
-        setSelectedBooking(details);
-      }
-    }
-  };
-
-  const filteredReservations = reservations.filter((res) => {
-    const matchesSearch =
-      res.reservation_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (res.amadeus_pnr && res.amadeus_pnr.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === "all" || res.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleExport = () => {
-    try {
-      const dataToExport = filteredReservations.map((r) => ({
-        'Numéro': r.reservation_number,
-        'PNR': r.amadeus_pnr || 'N/A',
-        'Statut': getStatusLabel(r.status),
-        'Type': r.trip_type === 'ALLER_SIMPLE' ? 'Aller simple' : 'Aller-retour',
-        'Prix': `${parseFloat(r.total_price).toLocaleString()} ${r.currency}`,
-        'Date': new Date(r.created_at).toLocaleDateString('fr-FR'),
-      }));
-      
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Réservations');
-      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      saveAs(new Blob([excelBuffer], { type: 'application/octet-stream' }), `reservations_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success("Export réussi !");
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Erreur lors de l'export");
     }
   };
 
@@ -229,382 +199,532 @@ export function Bookings() {
       FAILED: "Échoué",
       EXPIRED: "Expiré",
     };
-    return labels[status] || "En attente";
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (originalStatus) => {
+    switch (originalStatus) {
+      case "CONFIRMED":
+        return "bg-green-100 text-green-700";
+      case "PENDING_PRICE":
+      case "PRICE_CONFIRMED":
+        return "bg-yellow-100 text-yellow-700";
+      case "CANCELLED":
+        return "bg-red-100 text-red-700";
+      case "FAILED":
+        return "bg-red-100 text-red-700";
+      case "EXPIRED":
+        return "bg-gray-100 text-gray-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
   };
 
   const getTripTypeLabel = (type) => {
     return type === 'ALLER_SIMPLE' ? 'Aller simple' : 'Aller-retour';
   };
 
-  if (isLoading) {
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch =
+      booking.reservation_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.amadeus_pnr && booking.amadeus_pnr.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      booking.voyageur_id?.toString().includes(searchTerm.toLowerCase()) ||
+      booking.passenger_names?.some(name => name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === "all" || booking.original_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleExport = () => {
+    const dataToExport = filteredBookings.map(b => ({
+      'Numéro réservation': b.reservation_number,
+      'PNR': b.amadeus_pnr || 'N/A',
+      'Passagers': b.passenger_names?.join(', ') || 'N/A',
+      'Type': getTripTypeLabel(b.trip_type),
+      'Vol': `${b.flight_origin || 'N/A'} → ${b.flight_destination || 'N/A'}`,
+      'Date départ': b.departure_date ? new Date(b.departure_date).toLocaleDateString('fr-FR') : 'N/A',
+      'Date réservation': new Date(b.created_at).toLocaleDateString('fr-FR'),
+      'Montant': b.total_price,
+      'Statut': b.status,
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Réservations');
+    XLSX.writeFile(workbook, `reservations_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Export réussi !");
+  };
+
+  const handleViewDetails = async (booking) => {
+    setSelectedBooking(booking);
+    setDialogOpen(true);
+    const details = await fetchBookingDetails(booking.id);
+    setSelectedBookingDetails(details);
+  };
+
+  const handleNewReservation = () => {
+    if (isAdmin) {
+      navigate("/admin/search");
+    } else {
+      navigate("/search");
+    }
+  };
+
+  // Calculate stats
+  const totalBookings = totalCount;
+  const confirmedCount = bookings.filter(b => b.original_status === "CONFIRMED").length;
+  const pendingCount = bookings.filter(b => b.original_status === "PENDING_PRICE" || b.original_status === "PRICE_CONFIRMED").length;
+  const cancelledCount = bookings.filter(b => b.original_status === "CANCELLED" || b.original_status === "FAILED" || b.original_status === "EXPIRED").length;
+  const totalRevenue = bookings
+    .filter(b => b.original_status === "CONFIRMED")
+    .reduce((sum, b) => sum + (b.total_price_raw || 0), 0);
+
+  if (roleLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-              {[1,2,3,4,5,6].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>)}
-            </div>
-            <div className="h-12 bg-gray-200 rounded mb-4"></div>
-            {[1,2,3,4,5].map(i => <div key={i} className="h-16 bg-gray-200 rounded mb-2"></div>)}
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00C0E8]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Gestion des Réservations</h1>
-          <p className="text-gray-500 mt-1">Gérez toutes les réservations de vols, suivez les paiements et les statuts</p>
+    <div className="space-y-6 p-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Réservations</h1>
+          <p className="text-gray-600 mt-1">
+            Gérez toutes les réservations de vols
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleExport} variant="outline">
+            <Download className="size-4 mr-2" />
+            Exporter
+          </Button>
+          <Button onClick={handleNewReservation} variant="default">
+            <Plus className="size-4 mr-2" />
+            Nouvelle réservation
+          </Button>
+        </div>
+      </div>
+
+      {/* Simple Tabs */}
+      <div className="w-full">
+        <div className="flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("bookings")}
+            className={`px-4 py-2 font-medium transition-all relative ${
+              activeTab === "bookings"
+                ? "text-[#00C0E8] border-b-2 border-[#00C0E8]"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Liste des réservations
+          </button>
+          <button
+            onClick={() => setActiveTab("search")}
+            className={`px-4 py-2 font-medium transition-all relative flex items-center gap-2 ${
+              activeTab === "search"
+                ? "text-[#00C0E8] border-b-2 border-[#00C0E8]"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <Plus className="size-4" />
+            Rechercher un vol
+          </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <StatCard title="Total" value={stats.total} icon="📊" color="from-purple-500 to-indigo-600" />
-          <StatCard title="Confirmées" value={stats.confirmed} icon="✓" color="from-cyan-500 to-blue-600" />
-          <StatCard title="En attente" value={stats.pending} icon="⏳" color="from-amber-500 to-orange-600" />
-          <StatCard title="Expirées" value={stats.expired} icon="⌛" color="from-gray-500 to-gray-700" />
-          <StatCard title="Échouées" value={stats.failed} icon="✗" color="from-red-500 to-red-700" />
-          <StatCard title="Revenus" value={`${stats.totalRevenue.toLocaleString()} DZD`} icon="💰" color="from-emerald-500 to-teal-600" />
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Rechercher par numéro de réservation ou PNR..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
-              />
+        {/* Bookings List Tab */}
+        {activeTab === "bookings" && (
+          <div className="mt-6 space-y-6">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="border-0 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Total</p>
+                      <h3 className="text-2xl font-bold mt-1">{totalBookings}</h3>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-xl">
+                      <Calendar className="size-5 text-blue-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Confirmées</p>
+                      <h3 className="text-2xl font-bold mt-1 text-green-600">{confirmedCount}</h3>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-xl">
+                      <CheckCircle className="size-5 text-green-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">En attente</p>
+                      <h3 className="text-2xl font-bold mt-1 text-yellow-600">{pendingCount}</h3>
+                    </div>
+                    <div className="bg-yellow-50 p-3 rounded-xl">
+                      <Clock className="size-5 text-yellow-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Annulées/Échouées</p>
+                      <h3 className="text-2xl font-bold mt-1 text-red-600">{cancelledCount}</h3>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded-xl">
+                      <XCircle className="size-5 text-red-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="w-full md:w-64">
+
+            {/* Revenue Card */}
+            <Card className="border-0 shadow-md bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm opacity-80">Revenu total</p>
+                    <h3 className="text-3xl font-bold mt-1">{totalRevenue.toLocaleString()} DZD</h3>
+                  </div>
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    <CreditCard className="size-6" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Filters */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <Input
+                  placeholder="Rechercher par n° réservation, PNR, ID voyageur ou nom passager..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
+                className="w-full md:w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C0E8]"
               >
                 <option value="all">Tous les statuts</option>
                 <option value="CONFIRMED">Confirmé</option>
                 <option value="PENDING_PRICE">En attente de prix</option>
                 <option value="PRICE_CONFIRMED">Prix confirmé</option>
                 <option value="CANCELLED">Annulé</option>
-                <option value="EXPIRED">Expiré</option>
                 <option value="FAILED">Échoué</option>
+                <option value="EXPIRED">Expiré</option>
               </select>
             </div>
-            <button
-              onClick={handleExport}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
-            >
-              📥 Exporter
-            </button>
-            <button
-              onClick={fetchAllReservations}
-              className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition flex items-center gap-2"
-            >
-              🔄 Rafraîchir
-            </button>
-          </div>
-        </div>
 
-        {/* Results count */}
-        <div className="mb-3 text-sm text-gray-500">
-          {filteredReservations.length} réservation(s) trouvée(s) sur {reservations.length} au total
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Réservation</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Client ID</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Type</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Montant</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Statut</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredReservations.map((reservation) => (
-                  <tr key={reservation.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-800">{reservation.reservation_number}</div>
-                      {reservation.amadeus_pnr && (
-                        <div className="text-xs text-gray-500 font-mono">PNR: {reservation.amadeus_pnr}</div>
-                      )}
-                      <div className="text-xs text-gray-400">ID: {reservation.id}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-xs">
-                        👤 #{reservation.voyageur || "N/A"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 text-sm">
-                        ✈️ {getTripTypeLabel(reservation.trip_type)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {new Date(reservation.created_at).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-semibold text-cyan-600">
-                        {parseFloat(reservation.total_price).toLocaleString()} {reservation.currency}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={reservation.status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleViewDetails(reservation)}
-                        className="text-cyan-500 hover:text-cyan-700 transition p-1"
-                        title="Voir détails"
-                      >
-                        👁️
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {filteredReservations.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-5xl mb-3">✈️</div>
-              <h3 className="text-lg font-medium text-gray-700">Aucune réservation trouvée</h3>
-              <p className="text-gray-400 mt-1">Essayez de modifier vos critères de recherche</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Simple Modal Dialog */}
-      {dialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDialogOpen(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-white font-bold text-lg">Détails de la réservation</h2>
-              <button onClick={() => setDialogOpen(false)} className="text-white hover:bg-white/20 rounded-lg p-1 transition">
-                ✕
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-130px)]">
-              {isLoadingDetails ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
-                </div>
-              ) : selectedBooking ? (
-                <>
-                  {/* Status Alert */}
-                  <div className={`p-4 rounded-xl mb-4 ${selectedBooking.status === "CONFIRMED" ? "bg-green-50 border border-green-200" : "bg-yellow-50 border border-yellow-200"}`}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{selectedBooking.status === "CONFIRMED" ? "✅" : "⚠️"}</span>
-                      <span className="font-semibold">Statut: {getStatusLabel(selectedBooking.status)}</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Réservation créée le {new Date(selectedBooking.created_at).toLocaleString('fr-FR')}
-                      {selectedBooking.confirmation_date && ` • Confirmée le ${new Date(selectedBooking.confirmation_date).toLocaleString('fr-FR')}`}
-                    </p>
-                  </div>
-
-                  {/* Voyageur Information */}
-                  {selectedBooking.voyageur_details && (
-                    <div className="bg-blue-50 rounded-xl p-4 mb-4">
-                      <h3 className="font-semibold mb-3 flex items-center gap-2">👤 Informations du client</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <span className="text-gray-500">Nom complet:</span>
-                          <p className="font-medium">{selectedBooking.voyageur_details.prenom} {selectedBooking.voyageur_details.nom}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Email:</span>
-                          <p>{selectedBooking.voyageur_details.email || "N/A"}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Téléphone:</span>
-                          <p>{selectedBooking.voyageur_details.telephone || "N/A"}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Wilaya / Commune:</span>
-                          <p>{selectedBooking.voyageur_details.wilaya || "N/A"} / {selectedBooking.voyageur_details.commune || "N/A"}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Date de naissance:</span>
-                          <p>{selectedBooking.voyageur_details.date_naissance ? new Date(selectedBooking.voyageur_details.date_naissance).toLocaleDateString('fr-FR') : "N/A"}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Passeport:</span>
-                          <p>{selectedBooking.voyageur_details.num_passport || "N/A"}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* General Info */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <h3 className="font-semibold mb-2">Informations générales</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">N° réservation:</span>
-                          <span className="font-medium">{selectedBooking.reservation_number}</span>
-                        </div>
-                        {selectedBooking.amadeus_pnr && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Code PNR:</span>
-                            <span className="font-mono">{selectedBooking.amadeus_pnr}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Type de vol:</span>
-                          <span>{getTripTypeLabel(selectedBooking.trip_type)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Nombre de passagers:</span>
-                          <span>{selectedBooking.total_passengers || selectedBooking.passengers?.length || 1}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <h3 className="font-semibold mb-2">Paiement</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Montant total:</span>
-                          <span className="font-bold text-cyan-600">{parseFloat(selectedBooking.total_price).toLocaleString()} {selectedBooking.currency}</span>
-                        </div>
-                        {selectedBooking.payment && (
-                          <>
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Méthode:</span>
-                              <span>{selectedBooking.payment.payment_method === "CARD" ? "Carte bancaire" : 
-                                     selectedBooking.payment.payment_method === "DELIVERY" ? "Livraison" : 
-                                     selectedBooking.payment.payment_method === "CASH" ? "Espèces" : selectedBooking.payment.payment_method}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Statut paiement:</span>
-                              <span className={`px-2 py-0.5 rounded-full text-xs ${selectedBooking.payment.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                                {selectedBooking.payment.status === "COMPLETED" ? "Payé" : 
-                                 selectedBooking.payment.status === "PENDING" ? "En attente" : 
-                                 selectedBooking.payment.status === "FAILED" ? "Échoué" : selectedBooking.payment.status}
+            {/* Bookings Table */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-0">
+                <div className="rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>N° Réservation</TableHead>
+                        <TableHead>PNR</TableHead>
+                        <TableHead>Passagers</TableHead>
+                        <TableHead>Vol</TableHead>
+                        <TableHead>Date départ</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBookings.map((booking) => (
+                        <TableRow key={booking.id}>
+                          <TableCell className="font-medium">{booking.reservation_number}</TableCell>
+                          <TableCell>
+                            {booking.amadeus_pnr ? (
+                              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                {booking.amadeus_pnr.substring(0, 15)}...
                               </span>
-                            </div>
-                            {selectedBooking.payment.completed_at && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-500">Date paiement:</span>
-                                <span>{new Date(selectedBooking.payment.completed_at).toLocaleString('fr-FR')}</span>
-                              </div>
+                            ) : (
+                              <span className="text-gray-400">—</span>
                             )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Flight Segments */}
-                  {selectedBooking.flight_segments && selectedBooking.flight_segments.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-2">✈️ Détails des vols</h3>
-                      {selectedBooking.flight_segments.map((segment, idx) => (
-                        <div key={idx} className="bg-gray-50 rounded-xl p-4 mb-2">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          </TableCell>
+                          <TableCell>
                             <div>
-                              <span className="text-gray-500">Vol:</span>
-                              <p className="font-medium">{segment.origin} → {segment.destination}</p>
-                              <p className="text-xs text-gray-400">{segment.airline_name}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Départ:</span>
-                              <p>{new Date(segment.departure_datetime).toLocaleString('fr-FR')}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Arrivée:</span>
-                              <p>{new Date(segment.arrival_datetime).toLocaleString('fr-FR')}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Durée:</span>
-                              <p>{segment.duration}</p>
-                              {segment.price && <p className="text-xs text-cyan-600">{parseFloat(segment.price).toLocaleString()} {selectedBooking.currency}</p>}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Passengers */}
-                  {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="font-semibold mb-2">👥 Passagers ({selectedBooking.passengers.length})</h3>
-                      {selectedBooking.passengers.map((passenger, idx) => (
-                        <div key={idx} className="bg-gray-50 rounded-xl p-4 mb-2">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            <div>
-                              <span className="text-gray-500">Nom:</span>
-                              <p className="font-medium">{passenger.prenom} {passenger.nom}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Date naissance:</span>
-                              <p>{passenger.date_naissance ? new Date(passenger.date_naissance).toLocaleDateString('fr-FR') : 'N/A'}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Passeport:</span>
-                              <p className="font-mono">{passenger.num_passport || "N/A"}</p>
-                              {passenger.date_exp_passport && (
-                                <p className="text-xs text-gray-400">Exp: {new Date(passenger.date_exp_passport).toLocaleDateString('fr-FR')}</p>
+                              <span className="font-medium">{booking.passenger_count} passager(s)</span>
+                              {booking.passenger_names && booking.passenger_names.length > 0 && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {booking.passenger_names.slice(0, 2).join(', ')}
+                                  {booking.passenger_names.length > 2 && ` +${booking.passenger_names.length - 2}`}
+                                </div>
                               )}
                             </div>
-                            <div>
-                              <span className="text-gray-500">Enregistrement:</span>
-                              <p>{passenger.check_in_status ? "✅ Enregistré" : "⏳ Non enregistré"}</p>
-                              {passenger.seat_number && <p className="text-xs">Siège: {passenger.seat_number}</p>}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Plane className="size-3 text-cyan-500" />
+                              <span className="text-sm">
+                                {booking.flight_origin || '?'} → {booking.flight_destination || '?'}
+                              </span>
                             </div>
-                          </div>
-                        </div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {getTripTypeLabel(booking.trip_type)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {booking.departure_date ? new Date(booking.departure_date).toLocaleDateString('fr-FR') : 'N/A'}
+                          </TableCell>
+                          <TableCell className="font-semibold text-cyan-600">
+                            {booking.total_price}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(booking.original_status)}>
+                              {booking.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleViewDetails(booking)}
+                            >
+                              <Eye className="size-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {filteredBookings.length === 0 && (
+                  <div className="text-center py-12">
+                    <Plane className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-gray-500">Aucune réservation trouvée</p>
+                  </div>
+                )}
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between p-4 border-t">
+                    <div className="text-sm text-gray-600">
+                      Affichage de {(currentPage - 1) * 10 + 1} à {Math.min(currentPage * 10, totalCount)} sur {totalCount} réservations
                     </div>
-                  )}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        disabled={currentPage === 1}
+                        onClick={() => fetchBookings(currentPage - 1)}
+                      >
+                        <ChevronLeft className="size-4" />
+                        Précédent
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={currentPage === totalPages}
+                        onClick={() => fetchBookings(currentPage + 1)}
+                      >
+                        Suivant
+                        <ChevronRight className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-                  {/* Cancellation Info */}
-                  {selectedBooking.can_cancel && (
-                    <div className="bg-blue-50 rounded-xl p-3 mt-2">
-                      <p className="text-sm text-blue-700">
-                        ⚠️ Annulation possible jusqu'au {new Date(selectedBooking.can_cancel).toLocaleString('fr-FR')}
+        {/* Flight Search Tab */}
+        {activeTab === "search" && (
+          <div className="mt-6">
+            <FlightSearch />
+          </div>
+        )}
+      </div>
+
+      {/* Booking Details Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogHeader>
+          <DialogTitle>
+            Détails de la réservation {selectedBooking?.reservation_number}
+          </DialogTitle>
+          <DialogDescription>
+            Informations complètes sur la réservation
+          </DialogDescription>
+        </DialogHeader>
+        {isLoadingDetails ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00C0E8]"></div>
+          </div>
+        ) : selectedBookingDetails ? (
+          <div className="p-6 space-y-6">
+            {/* Status Banner */}
+            <div className={`p-4 rounded-xl ${selectedBookingDetails.status === "CONFIRMED" ? "bg-green-50 border border-green-200" : "bg-yellow-50 border border-yellow-200"}`}>
+              <div className="flex items-center gap-2">
+                {selectedBookingDetails.status === "CONFIRMED" ? (
+                  <CheckCircle className="size-5 text-green-600" />
+                ) : (
+                  <Clock className="size-5 text-yellow-600" />
+                )}
+                <span className="font-semibold">Statut: {getStatusLabel(selectedBookingDetails.status)}</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Créée le {new Date(selectedBookingDetails.created_at).toLocaleString('fr-FR')}
+                {selectedBookingDetails.confirmation_date && ` • Confirmée le ${new Date(selectedBookingDetails.confirmation_date).toLocaleString('fr-FR')}`}
+              </p>
+            </div>
+
+            {/* Flight Segments */}
+            {selectedBookingDetails.flight_segments && selectedBookingDetails.flight_segments.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Plane className="size-4 text-cyan-500" />
+                  Détails du vol
+                </h3>
+                {selectedBookingDetails.flight_segments.map((segment, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-xl p-4 mb-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-lg">{segment.origin}</span>
+                        <span className="text-gray-400">→</span>
+                        <span className="font-bold text-lg">{segment.destination}</span>
+                      </div>
+                      <Badge className="bg-gray-200 text-gray-700">
+                        Vol {segment.airline_name} {segment.flight_data?.flightNumber}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Départ</p>
+                        <p className="font-medium">{new Date(segment.departure_datetime).toLocaleString('fr-FR')}</p>
+                        <p className="text-xs text-gray-400">{segment.origin}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Arrivée</p>
+                        <p className="font-medium">{new Date(segment.arrival_datetime).toLocaleString('fr-FR')}</p>
+                        <p className="text-xs text-gray-400">{segment.destination}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Durée</p>
+                        <p className="font-medium">{segment.duration}</p>
+                        <p className="text-xs text-gray-400">{segment.price ? `${parseFloat(segment.price).toLocaleString()} ${selectedBookingDetails.currency}` : ''}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Passengers */}
+            {selectedBookingDetails.passengers && selectedBookingDetails.passengers.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Users className="size-4 text-cyan-500" />
+                  Passagers ({selectedBookingDetails.passengers.length})
+                </h3>
+                {selectedBookingDetails.passengers.map((passenger, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-xl p-4 mb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{passenger.prenom} {passenger.nom}</p>
+                        <p className="text-sm text-gray-500">{passenger.sexe === 'homme' ? 'Homme' : 'Femme'}</p>
+                      </div>
+                      <Badge className={passenger.check_in_status ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}>
+                        {passenger.check_in_status ? "Enregistré" : "Non enregistré"}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                      <div>
+                        <p className="text-gray-500">Date de naissance</p>
+                        <p>{passenger.date_naissance ? new Date(passenger.date_naissance).toLocaleDateString('fr-FR') : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Passeport</p>
+                        <p className="font-mono">{passenger.num_passport || 'N/A'}</p>
+                      </div>
+                      {passenger.seat_number && (
+                        <div>
+                          <p className="text-gray-500">Siège</p>
+                          <p>{passenger.seat_number}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-gray-500">Bagages</p>
+                        <p>{passenger.baggage_quantity || 0} bagage(s)</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Payment Info */}
+            {selectedBookingDetails.payment && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <CreditCard className="size-4 text-cyan-500" />
+                  Informations de paiement
+                </h3>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-500">Montant total</p>
+                      <p className="font-bold text-lg text-cyan-600">
+                        {parseFloat(selectedBookingDetails.total_price).toLocaleString()} {selectedBookingDetails.currency}
                       </p>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-4">Aucune donnée disponible</div>
-              )}
-            </div>
+                    <div>
+                      <p className="text-gray-500">Méthode</p>
+                      <p>
+                        {selectedBookingDetails.payment.payment_method === "CARD" ? "Carte bancaire" :
+                         selectedBookingDetails.payment.payment_method === "DELIVERY" ? "Paiement à la livraison" :
+                         selectedBookingDetails.payment.payment_method === "CASH" ? "Espèces" : selectedBookingDetails.payment.payment_method}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Statut</p>
+                      <Badge className={selectedBookingDetails.payment.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}>
+                        {selectedBookingDetails.payment.status === "COMPLETED" ? "Payé" : "En attente"}
+                      </Badge>
+                    </div>
+                    {selectedBookingDetails.payment.completed_at && (
+                      <div>
+                        <p className="text-gray-500">Date de paiement</p>
+                        <p>{new Date(selectedBookingDetails.payment.completed_at).toLocaleString('fr-FR')}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* Footer */}
-            <div className="border-t px-6 py-4 flex justify-end gap-2">
-              <button onClick={() => setDialogOpen(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition">
-                Fermer
-              </button>
-              <button onClick={() => window.print()} className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition">
-                🖨️ Imprimer
-              </button>
-            </div>
+            {/* PNR Info */}
+            {selectedBookingDetails.amadeus_pnr && (
+              <div className="bg-blue-50 rounded-xl p-4">
+                <p className="text-sm text-gray-600">Code PNR (Amadeus)</p>
+                <p className="font-mono font-bold text-lg">{selectedBookingDetails.amadeus_pnr}</p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="p-6 text-center text-gray-500">
+            Aucune information disponible
+          </div>
+        )}
+      </Dialog>
     </div>
   );
 }

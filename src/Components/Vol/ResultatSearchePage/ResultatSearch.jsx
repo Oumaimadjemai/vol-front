@@ -7,12 +7,14 @@ import SearchHeader from './SearchHeader';
 import FlightList from './FlightList';
 import useAirports from '../../../hooks/useAirports';
 import axiosInstance from '../../../api/axiosInstance';
+import { useUserRole } from '../../../hooks/useUserRole';
 
 
 export default function ResultatSearch() {
   const location = useLocation();
   const navigate = useNavigate();
   const { airports } = useAirports();
+  const { role, loading: roleLoading } = useUserRole();
   
   // ========== ÉTATS RÉSULTATS ==========
   const [flights, setFlights] = useState([]);
@@ -36,6 +38,8 @@ export default function ResultatSearch() {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   
   const searchHeaderRef = useRef(null);
+
+  const isAdmin = role === "admin";
 
   // ========== CHARGEMENT INITIAL ==========
   useEffect(() => {
@@ -157,7 +161,7 @@ export default function ResultatSearch() {
     setMultiFlights(updated);
   };
 
-  // ========== FILTRAGE DES VOLS (CORRIGÉ) ==========
+  // ========== FILTRAGE DES VOLS ==========
   const handleFilterChange = (filters) => {
     let filtered = [...flights];
     
@@ -175,7 +179,6 @@ export default function ResultatSearch() {
     
     // 2. Filtrer par nombre d'escales
     if (isMulti) {
-      // Multi-destination: chaque vol a son propre filtre d'escales
       if (filters.stops && typeof filters.stops === 'object' && Object.keys(filters.stops).length > 0) {
         filtered = filtered.filter(flight => {
           const segments = flight.segments || flight.flights || [];
@@ -198,7 +201,6 @@ export default function ResultatSearch() {
         });
       }
     } else {
-      // Vol simple
       if (filters.stops && filters.stops !== 'all') {
         filtered = filtered.filter(flight => {
           const stops = flight.stops || 0;
@@ -326,7 +328,12 @@ export default function ResultatSearch() {
         };
       }
       
-      navigate("/results", { state: searchData });
+      // Role-based navigation for new search results
+      if (isAdmin) {
+        navigate("/admin/results", { state: searchData });
+      } else {
+        navigate("/results", { state: searchData });
+      }
     } catch (error) {
       console.error("Erreur:", error);
       alert(error.response?.data?.message || "Erreur recherche vols");
@@ -334,31 +341,36 @@ export default function ResultatSearch() {
       setIsSearching(false);
     }
   };
-  // Add this function in your ResultatSearch component
-const handleReserver = (vol) => {
-  console.log('Réservation:', vol);
-  
-  // Prepare complete reservation data
-  const reservationData = {
-    flight: vol,
-    isMulti: isMulti,
-    passengers: passengers,
-    passengersCount: totalPassengers,
-    searchParams: {
-      type: activeTab,
-      from: from,
-      to: to,
-      departureDate: departureDate,
-      returnDate: returnDate,
-      flightClass: flightClass,
-      options: options,
-      multiFlights: multiFlights
+
+  // ========== RÉSERVATION D'UN VOL ==========
+  const handleReserver = (vol) => {
+    console.log('Réservation:', vol);
+    
+    // Prepare complete reservation data
+    const reservationData = {
+      flight: vol,
+      isMulti: isMulti,
+      passengers: passengers,
+      passengersCount: totalPassengers,
+      searchParams: {
+        type: activeTab,
+        from: from,
+        to: to,
+        departureDate: departureDate,
+        returnDate: returnDate,
+        flightClass: flightClass,
+        options: options,
+        multiFlights: multiFlights
+      }
+    };
+    
+    // Role-based navigation for reservation
+    if (isAdmin) {
+      navigate('/admin/reservation', { state: { reservationData } });
+    } else {
+      navigate('/reservation', { state: { reservationData } });
     }
   };
-  
-  // Navigate to reservation page with data
-  navigate('/reservation', { state: { reservationData } });
-};
 
   // ========== GESTION UI ==========
   const handleFormClick = () => setShowAdvancedOptions(true);
@@ -366,15 +378,16 @@ const handleReserver = (vol) => {
   const totalPassengers = passengers.adult + passengers.child + passengers.baby;
   const hasFlights = flights.length > 0;
 
-  if (loading) return <LoadingSpinner />;
+  // Show loading while checking role
+  if (roleLoading || loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto p-6">
 
-        {/* Bouton retour */}
+        {/* Bouton retour - Role-based navigation */}
         <button 
-          onClick={() => navigate('/')} 
+          onClick={() => isAdmin ? navigate('/admin/reservations') : navigate('/')} 
           className="mb-4 flex items-center gap-2 text-gray-600 hover:text-cyan-500 transition"
         >
           <CgChevronLeft /> Retour à l'accueil
@@ -457,9 +470,3 @@ const LoadingSpinner = () => (
     </div>
   </div>
 );
-
-// ========== FONCTION RÉSERVATION ==========
-const handleReserver = (vol) => {
-  console.log('Réservation:', vol);
-  alert('Fonctionnalité de réservation à implémenter');
-};

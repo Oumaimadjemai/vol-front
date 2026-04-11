@@ -17,7 +17,6 @@ import Dashboard from "../Components/pages/Admin/Dashboard/Dashboard";
 import UsersBoard from "../Components/pages/Admin/users/users";
 import FlightSearch from "../Components/Vol/SearchFlight/FlightSearchPage";
 import ResultatSearch from "../Components/Vol/ResultatSearchePage/ResultatSearch";
-import ReservationSystem from "../Components/Vol/Reservation/ReservationSystem";
 import Reservation from "../Components/Vol/Reservation/Reservation";
 import Profile from "../Components/pages/Voyageur/Home/Profile";
 import { Bookings } from "../Components/pages/Admin/Booking/Booking";
@@ -25,40 +24,38 @@ import { Bookings } from "../Components/pages/Admin/Booking/Booking";
 export default function AppRoutes() {
   return (
     <Routes>
-
       {/* SITE NORMAL */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/results" element={<ResultatSearch />} />
-        <Route path="/vol" element={<FlightSearch/>} />
-        <Route path="/reservation" element={<Reservation/>} />
+        <Route path="/vol" element={<FlightSearch />} />
+        <Route path="/reservation" element={<Reservation />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:uid/:token/" element={<ResetPassword />} />
+            <Route path="/admin/login" element={<LoginAdmin />} />
+
+        <Route
+          path="/reset-password/:uid/:token/"
+          element={<ResetPassword />}
+        />
         <Route path="/profile" element={<Profile />} />
       </Route>
 
-      {/* ADMIN ROUTES - NOT PROTECTED FOR NOW */}
-      <Route path="/admin/login" element={<LoginAdmin />} />
-      <Route element={<AdminLayout />}>
-        <Route path="/admin" element={<Dashboard/>} />
-        <Route path="/admin/users" element={<UsersBoard/>} />
-        <Route path="/admin/reservations" element={<Bookings/>} />
-
-      </Route>
-      
       {/* ADMIN PROTECTED - COMMENTED OUT FOR NOW */}
-      {/* <Route element={<ProtectedAdmin />}>
+      <Route element={<ProtectedAdmin />}>
         <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<Dashboard/>} />
-          <Route path="/admin/users" element={<UsersBoard/>} />
+          <Route path="/admin" element={<Dashboard />}/>
+            <Route path="/admin/users" element={<UsersBoard />} />
+            <Route path="/admin/reservations" element={<Bookings />} />
+            <Route path="/admin/reservation" element={<Reservation />} />
+            <Route path="/admin/results" element={<ResultatSearch />} />
+          
         </Route>
-      </Route> */}
+      </Route>
 
       <Route path="*" element={<NotFound />} />
-
     </Routes>
   );
 }
