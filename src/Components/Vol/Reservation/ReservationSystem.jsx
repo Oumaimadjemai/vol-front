@@ -1150,8 +1150,7 @@ const prepareReservationData = () => {
   );
 }
 
-// ConfirmationPage component
-// ConfirmationPage component - Complete version with ticket generation
+// ConfirmationPage component - Updated to call the download endpoint
 const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRoundTrip, passengers, totalPrice }) => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   
@@ -1161,24 +1160,16 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
   const paymentStatus = bookingResponse?.payment_status || 'COMPLETED';
   const totalPriceValue = bookingResponse?.total_price || totalPrice || '0 DZD';
   
-  const generateTicketPDF = async () => {
+  const downloadTicket = async () => {
     setIsGeneratingPDF(true);
     try {
-      // Create ticket data
-      const ticketData = {
-        reservationNumber: reservationId,
-        pnr: pnr,
-        bookingDate: new Date().toLocaleDateString('fr-FR'),
-        flightDetails: flightDetails,
-        passengers: passengers,
-        totalPrice: totalPriceValue,
-        isRoundTrip: isRoundTrip
-      };
-      
-      // Call your PDF generation endpoint or use jsPDF
-      const response = await axiosInstance.post('/ms-reservation/reservations/generate-ticket/', ticketData, {
-        responseType: 'blob'
-      });
+      // Call the Django download endpoint
+      const response = await axiosInstance.get(
+        `/ms-reservation/reservations/${reservationId}/ticket/download/`,
+        {
+          responseType: 'blob'
+        }
+      );
       
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -1192,8 +1183,8 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
       
       toast.success('Billet téléchargé avec succès');
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Erreur lors de la génération du billet');
+      console.error('Error downloading ticket:', error);
+      toast.error('Erreur lors du téléchargement du billet');
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -1267,21 +1258,21 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
               ${flightDetails?.type === 'multi' ? `
                 ${flightDetails.segments.map((segment, idx) => `
                   <div style="margin-bottom: 15px;">
-                    <strong>Segment ${idx + 1}: ${segment.departure.city} → ${segment.arrival.city}</strong><br>
+                    <strong>Segment ${idx + 1}: ${segment.departure?.city || segment.departure?.airport} → ${segment.arrival?.city || segment.arrival?.airport}</strong><br>
                     Vol: ${segment.airline} ${segment.flightNumber}<br>
-                    Départ: ${segment.departure.date} à ${segment.departure.time}<br>
-                    Arrivée: ${segment.arrival.date} à ${segment.arrival.time}
+                    Départ: ${segment.departure?.date || 'N/A'} à ${segment.departure?.time || 'N/A'}<br>
+                    Arrivée: ${segment.arrival?.date || 'N/A'} à ${segment.arrival?.time || 'N/A'}
                   </div>
                 `).join('')}
               ` : `
-                <div><strong>Aller:</strong> ${flightDetails?.outbound?.departure?.city} → ${flightDetails?.outbound?.arrival?.city}</div>
+                <div><strong>Aller:</strong> ${flightDetails?.outbound?.departure?.city || flightDetails?.outbound?.departure?.airport} → ${flightDetails?.outbound?.arrival?.city || flightDetails?.outbound?.arrival?.airport}</div>
                 <div>Date: ${flightDetails?.outbound?.departure?.date}</div>
                 <div>Départ: ${flightDetails?.outbound?.departure?.time} | Arrivée: ${flightDetails?.outbound?.arrival?.time}</div>
                 <div>Vol: ${flightDetails?.outbound?.airline} ${flightDetails?.outbound?.flightNumber}</div>
                 ${isRoundTrip && flightDetails?.return ? `
-                  <div style="margin-top: 15px;"><strong>Retour:</strong> ${flightDetails.return.departure.city} → ${flightDetails.return.arrival.city}</div>
-                  <div>Date: ${flightDetails.return.departure.date}</div>
-                  <div>Départ: ${flightDetails.return.departure.time} | Arrivée: ${flightDetails.return.arrival.time}</div>
+                  <div style="margin-top: 15px;"><strong>Retour:</strong> ${flightDetails.return.departure?.city || flightDetails.return.departure?.airport} → ${flightDetails.return.arrival?.city || flightDetails.return.arrival?.airport}</div>
+                  <div>Date: ${flightDetails.return.departure?.date}</div>
+                  <div>Départ: ${flightDetails.return.departure?.time} | Arrivée: ${flightDetails.return.arrival?.time}</div>
                   <div>Vol: ${flightDetails.return.airline} ${flightDetails.return.flightNumber}</div>
                 ` : ''}
               `}
@@ -1291,14 +1282,14 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
               <h3>Passagers</h3>
               ${passengers && passengers.length > 0 ? `
                 ${passengers.map((p, idx) => `
-                  <div>${idx + 1}. ${p.prenom || p.firstName} ${p.nom || p.lastName}</div>
+                  <div>${idx + 1}. ${p.prenom || p.firstName || ''} ${p.nom || p.lastName || ''}</div>
                 `).join('')}
               ` : '<div>1 passager</div>'}
             </div>
           </div>
           <div class="footer">
             <p>Merci d'avoir choisi FlyExpress! Présentez ce billet à l'embarquement.</p>
-            <p>Pour toute assistance, contactez-nous au +213 XXX XXX XXX</p>
+            <p>Pour toute assistance, contactez-nous au +213 555 123 456</p>
           </div>
         </div>
         <div class="no-print" style="text-align: center; margin-top: 20px;">
@@ -1317,22 +1308,19 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
       transition={{ duration: 0.5 }}
       className="bg-white rounded-2xl shadow-xl overflow-hidden"
     >
-      <div className="bg-gradient-to-r from-green-500 to-green-600 px-8 py-12 text-center">
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-8 py-12 text-center">
         <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6">
-          <FaCheck className="w-10 h-10 text-green-500" />
+          <FaCheck className="w-10 h-10 text-[#00C0E8]" />
         </div>
-        <h2 className="text-3xl font-bold text-white mb-2">Réservation Confirmée !</h2>
-        <p className="text-green-100">Votre réservation a été effectuée avec succès</p>
+        <h2 className="text-3xl font-bold text-[#00C0E8] mb-2">Réservation Confirmée !</h2>
+        <p className="text-cyan-600">Votre réservation a été effectuée avec succès</p>
       </div>
       
       <div className="p-8">
         {/* Reservation Summary */}
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <p className="text-xs text-gray-500">Numéro de réservation</p>
-              <p className="text-xl font-bold text-gray-800">{reservationId}</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-9">
+            
             <div>
               <p className="text-xs text-gray-500">Code PNR</p>
               <p className="text-xl font-bold font-mono text-[#00C0E8]">{pnr}</p>
@@ -1363,19 +1351,19 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
                 {flightDetails.segments.map((segment, idx) => (
                   <div key={idx} className="bg-gray-50 rounded-xl p-4">
                     <div className="flex justify-between items-center mb-3">
-                      <div className="font-semibold">{segment.departure.city} → {segment.arrival.city}</div>
+                      <div className="font-semibold">{segment.departure?.city || segment.departure?.airport} → {segment.arrival?.city || segment.arrival?.airport}</div>
                       <div className="text-sm text-gray-500">Vol {segment.airline} {segment.flightNumber}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-gray-500">Départ</p>
-                        <p className="font-semibold">{segment.departure.date} à {segment.departure.time}</p>
-                        <p className="text-xs text-gray-500">{segment.departure.airport}</p>
+                        <p className="font-semibold">{segment.departure?.date || 'N/A'} à {segment.departure?.time || 'N/A'}</p>
+                        <p className="text-xs text-gray-500">{segment.departure?.airport}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">Arrivée</p>
-                        <p className="font-semibold">{segment.arrival.date} à {segment.arrival.time}</p>
-                        <p className="text-xs text-gray-500">{segment.arrival.airport}</p>
+                        <p className="font-semibold">{segment.arrival?.date || 'N/A'} à {segment.arrival?.time || 'N/A'}</p>
+                        <p className="text-xs text-gray-500">{segment.arrival?.airport}</p>
                       </div>
                     </div>
                   </div>
@@ -1385,19 +1373,19 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <div className="font-semibold">{flightDetails.outbound.departure.city} → {flightDetails.outbound.arrival.city}</div>
-                    <div className="text-sm text-gray-500">Vol {flightDetails.outbound.airline} {flightDetails.outbound.flightNumber}</div>
+                    <div className="font-semibold">{flightDetails.outbound?.departure?.city || flightDetails.outbound?.departure?.airport} → {flightDetails.outbound?.arrival?.city || flightDetails.outbound?.arrival?.airport}</div>
+                    <div className="text-sm text-gray-500">Vol {flightDetails.outbound?.airline} {flightDetails.outbound?.flightNumber}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-gray-500">Départ</p>
-                      <p className="font-semibold">{flightDetails.outbound.departure.date} à {flightDetails.outbound.departure.time}</p>
-                      <p className="text-xs text-gray-500">{flightDetails.outbound.departure.airport}</p>
+                      <p className="font-semibold">{flightDetails.outbound?.departure?.date || 'N/A'} à {flightDetails.outbound?.departure?.time || 'N/A'}</p>
+                      <p className="text-xs text-gray-500">{flightDetails.outbound?.departure?.airport}</p>
                     </div>
                     <div>
                       <p className="text-gray-500">Arrivée</p>
-                      <p className="font-semibold">{flightDetails.outbound.arrival.date} à {flightDetails.outbound.arrival.time}</p>
-                      <p className="text-xs text-gray-500">{flightDetails.outbound.arrival.airport}</p>
+                      <p className="font-semibold">{flightDetails.outbound?.arrival?.date || 'N/A'} à {flightDetails.outbound?.arrival?.time || 'N/A'}</p>
+                      <p className="text-xs text-gray-500">{flightDetails.outbound?.arrival?.airport}</p>
                     </div>
                   </div>
                 </div>
@@ -1405,19 +1393,19 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
                 {isRoundTrip && flightDetails.return && (
                   <div className="bg-gray-50 rounded-xl p-4">
                     <div className="flex justify-between items-center mb-3">
-                      <div className="font-semibold">{flightDetails.return.departure.city} → {flightDetails.return.arrival.city}</div>
+                      <div className="font-semibold">{flightDetails.return.departure?.city || flightDetails.return.departure?.airport} → {flightDetails.return.arrival?.city || flightDetails.return.arrival?.airport}</div>
                       <div className="text-sm text-gray-500">Vol {flightDetails.return.airline} {flightDetails.return.flightNumber}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-gray-500">Départ</p>
-                        <p className="font-semibold">{flightDetails.return.departure.date} à {flightDetails.return.departure.time}</p>
-                        <p className="text-xs text-gray-500">{flightDetails.return.departure.airport}</p>
+                        <p className="font-semibold">{flightDetails.return.departure?.date || 'N/A'} à {flightDetails.return.departure?.time || 'N/A'}</p>
+                        <p className="text-xs text-gray-500">{flightDetails.return.departure?.airport}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">Arrivée</p>
-                        <p className="font-semibold">{flightDetails.return.arrival.date} à {flightDetails.return.arrival.time}</p>
-                        <p className="text-xs text-gray-500">{flightDetails.return.arrival.airport}</p>
+                        <p className="font-semibold">{flightDetails.return.arrival?.date || 'N/A'} à {flightDetails.return.arrival?.time || 'N/A'}</p>
+                        <p className="text-xs text-gray-500">{flightDetails.return.arrival?.airport}</p>
                       </div>
                     </div>
                   </div>
@@ -1437,7 +1425,7 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
             <div className="space-y-2">
               {passengers.map((passenger, idx) => (
                 <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                  <div className="font-semibold">{passenger.prenom || passenger.firstName} {passenger.nom || passenger.lastName}</div>
+                  <div className="font-semibold">{passenger.prenom || passenger.firstName || ''} {passenger.nom || passenger.lastName || ''}</div>
                   {passenger.num_passport && (
                     <div className="text-sm text-gray-500">Passeport: {passenger.num_passport}</div>
                   )}
@@ -1457,7 +1445,7 @@ const ConfirmationPage = ({ reservationId, bookingResponse, flightDetails, isRou
           </button>
           
           <button 
-            onClick={generateTicketPDF}
+            onClick={downloadTicket}
             disabled={isGeneratingPDF}
             className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[#00C0E8] text-white rounded-xl font-semibold hover:bg-[#0096b8] transition-all disabled:opacity-50"
           >
