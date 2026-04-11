@@ -17,7 +17,7 @@ import {
   Cell,
 } from "recharts";
 
-import { Link } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import {
   ArrowUpRight,
   Calendar,
@@ -151,6 +151,7 @@ const recentReservations = [
 
 export default function Dashboard() {
   return (
+    <>
     <div className="p-8 space-y-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
@@ -339,5 +340,7 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
+    <Outlet/>
+    </>
   );
 }
