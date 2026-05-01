@@ -192,7 +192,7 @@ const handleProfileClick = () => {
             className="text-xl font-bold text-[#00C0E8] cursor-pointer font-playfair"
             onClick={() => navigate("/")}
           >
-            Traveling!
+            Voyage Express
           </div>
           
           <div className="hidden md:flex space-x-6 absolute left-1/2 transform -translate-x-1/2">
@@ -208,13 +208,13 @@ const handleProfileClick = () => {
               <>
                 <button
                   onClick={() => setIsSignupOpen(true)}
-                  className="px-4 py-2 rounded-3xl text-slate-700 font-medium hover:text-sky-500 transition"
+                  className="hidden lg:block px-4 py-2 rounded-3xl text-slate-700 font-medium hover:text-sky-500 transition"
                 >
                   {t("inscription")}
                 </button>
                 <button
                   onClick={() => setIsLoginOpen(true)}
-                  className="px-4 py-2 rounded-3xl bg-[#00C0E8] text-white hover:bg-sky-500 transition font-medium"
+                  className="hidden lg:block px-4 py-2 rounded-3xl bg-[#00C0E8] text-white hover:bg-sky-500 transition font-medium"
                 >
                   {t("connexion")}
                 </button>
@@ -459,17 +459,15 @@ const handleProfileClick = () => {
         PaperProps={{
           style: {
             boxShadow: "none",
-            overflow: "visible", 
+            overflow: "hidden", 
             margin: 0,
-            width: "100%",
             maxWidth: "850px",
-            backgroundColor: "white",
             borderRadius: "12px",
             position: "relative",
           },
         }}
       >
-        <div className="relative max-h-[80vh] overflow-y-auto"> 
+        <div className="relative"> 
           <Login 
             onLoginSuccess={handleLoginSuccess} 
             onSwitchToSignup={handleSwitchToSignup}
@@ -486,9 +484,8 @@ const handleProfileClick = () => {
         PaperProps={{
           style: {
             boxShadow: "none",
-            overflow: "visible", 
+            overflow: "hidden", 
             margin: 0,
-            width: "100%",
             maxWidth: "850px",
             backgroundColor: "white",
             borderRadius: "12px",
@@ -496,7 +493,7 @@ const handleProfileClick = () => {
           },
         }}
       >
-        <div className="relative max-h-[80vh] overflow-y-auto">
+        <div className="relative ">
           <Signup 
             onSwitchToSignin={handleSwitchToSignIn} 
             onSignupSuccess={handleSignupSuccess}
@@ -512,9 +509,8 @@ const handleProfileClick = () => {
         PaperProps={{
           style: {
             boxShadow: "none",
-            overflow: "visible", 
+            overflow: "hidden", 
             margin: 0,
-            width: "100%",
             maxWidth: "450px",
             backgroundColor: "white",
             borderRadius: "16px",
@@ -522,7 +518,7 @@ const handleProfileClick = () => {
           },
         }}
       >
-        <div className="relative max-h-[80vh] overflow-y-auto"> 
+        <div className="relative"> 
           <ForgotPassword
             onBackToLogin={handleBackToLogin}
             onSwitchToLogin={handleBackToLogin}

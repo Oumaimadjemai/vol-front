@@ -10,6 +10,21 @@ const axiosInstance = axios.create({
   },
 });
 
+// Track if refresh is already in progress
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Intercepteur pour ajouter le token aux requêtes
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -44,17 +59,36 @@ axiosInstance.interceptors.response.use(
     console.log('Response error:', error.response?.status, error.config?.url);
     
     // Check if it's a 401 error and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip refresh for auth endpoints to avoid loops
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/') || 
+                          originalRequest.url?.includes('/login') ||
+                          originalRequest.url?.includes('/register') ||
+                          originalRequest.url?.includes('/refresh');
+    
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return axiosInstance(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+      
       originalRequest._retry = true;
+      isRefreshing = true;
       
       const refreshToken = localStorage.getItem('refresh_token');
       
-      // If no refresh token exists, user is not authenticated
-      // Don't attempt to refresh, just reject and let the app handle it
       if (!refreshToken) {
         console.log('No refresh token available - user is not authenticated');
-        // Don't clear localStorage or redirect here
-        // Let the component handle the unauthenticated state
+        isRefreshing = false;
+        // Clear storage and redirect
+        localStorage.clear();
+        window.location.href = '/login';
         return Promise.reject(error);
       }
       
@@ -68,17 +102,27 @@ axiosInstance.interceptors.response.use(
         console.log('Token refreshed successfully');
         
         if (response.data.access) {
-          localStorage.setItem('access_token', response.data.access);
-          originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
+          const newToken = response.data.access;
+          localStorage.setItem('access_token', newToken);
+          
+          // Update authorization header
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          
+          // Process queued requests
+          processQueue(null, newToken);
+          
+          // Retry the original request
           return axiosInstance(originalRequest);
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
-        // Only clear storage and redirect if refresh actually fails
-        // This means the refresh token is invalid or expired
+        processQueue(refreshError, null);
+        // Clear storage and redirect to login
         localStorage.clear();
-        window.location.href = '/';
+        window.location.href = '/login';
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
     
@@ -96,7 +140,7 @@ export const isAuthenticated = () => {
 export const logout = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
-  window.location.href = '/';
+  window.location.href = '/login';
 };
 
 export default axiosInstance;

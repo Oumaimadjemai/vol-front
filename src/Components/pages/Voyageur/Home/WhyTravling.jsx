@@ -11,7 +11,7 @@ const WhyTravling = () => {
         {/* LEFT CONTENT */}
         <div className="space-y-6">
           <h1 className="text-4xl md:text-5xl font-bold text-[#00C0E8] drop-shadow-md">
-            Pourquoi Travling?
+            Pourquoi Voyage Express?
           </h1>
 
           <p className="text-gray-600 text-lg leading-relaxed">

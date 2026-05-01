@@ -1,16 +1,21 @@
 import DestinationAlbum from "./DestinationAlbum";
 import home from "../../../../assets/images/home.png";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import WhyTravling from "./WhyTravling";
 import OffreSpecial from "./OffreSpecial";
 import FlightSearch from "../../../Vol/SearchFlight/FlightSearchPage";
+import Login from "../../../authentication/Login";
+import Dialog from "@mui/material/Dialog";
+import Signup from "../../../authentication/Signup";
 
 export default function Home() {
   const location = useLocation();
   const { t } = useTranslation();
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
 
   useEffect(() => {
     if (location.hash) {
@@ -20,6 +25,9 @@ export default function Home() {
       }
     }
   }, [location]);
+   const checkAuth = () => {
+    return !!localStorage.getItem("access_token");
+  };
 
   return (
     <>
@@ -47,6 +55,21 @@ export default function Home() {
             <h2 className="text-[#00C0E8] text-5xl sm:text-6xl font-bold leading-tight font-playfair whitespace-pre-line">
               {t("hero_title")}
             </h2>
+            {!checkAuth() && (
+              <div className="mt-6 lg:hidden flex  space-y-3">
+                <button
+                  onClick={() => setIsSignupOpen(true)}
+                  className="w-full px-4 rounded-3xl text-slate-700 font-medium  hover:text-[#00c0e8] transition bg-white/90">
+                  {t("inscription")}
+                </button>
+               <button
+                  onClick={() => setIsLoginOpen(true)}
+                  className="w-full px-4 py-2 rounded-3xl bg-[#00C0E8] text-white hover:bg-sky-500 transition font-medium"
+                >
+                  {t("connexion")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -74,6 +97,66 @@ export default function Home() {
           />
         </div>
       </section>
+      <Dialog
+        open={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        maxWidth="sm"
+        disableScrollLock
+        PaperProps={{
+          style: {
+            boxShadow: "none",
+            overflow: "hidden",
+            margin: 0,
+            
+            maxWidth: "850px",
+            backgroundColor: "white",
+            borderRadius: "12px",
+          },
+        }}
+      >
+        <div className="relative">
+          <Login 
+            onLoginSuccess={() => setIsLoginOpen(false)}
+            onSwitchToSignup={() => {
+              setIsLoginOpen(false);
+              setIsSignupOpen(true);
+            }}
+            onSwitchToReset={() => {
+              // Handle reset password if needed
+              setIsLoginOpen(false);
+            }}
+          />
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={isSignupOpen}
+        onClose={() => setIsSignupOpen(false)}
+        maxWidth="sm"
+        disableScrollLock
+        PaperProps={{
+          style: {
+            boxShadow: "none",
+            overflow: "hidden",
+            margin: 0,
+            
+            maxWidth: "850px",
+            backgroundColor: "white",
+            borderRadius: "12px",
+          },
+        }}
+      >
+        <div className="relative ">
+          <Signup
+            onSwitchToSignin={() => {
+              setIsSignupOpen(false);
+              setIsLoginOpen(true);
+            }}
+            onSignupSuccess={() => setIsSignupOpen(false)}
+          />
+        </div>
+      </Dialog>
+      
       <FlightSearch/>
       <DestinationAlbum />
       <OffreSpecial/>

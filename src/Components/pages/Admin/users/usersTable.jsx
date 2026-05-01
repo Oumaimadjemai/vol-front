@@ -63,7 +63,7 @@ const UsersTable = ({ users, onMenuOpen, onRowClick, userType = 'staff' }) => {
     { label: "Contact", width: "22%", key: "contact" },
     { label: "Statut", width: "10%", key: "status" },
     { label: "Réservations", width: "10%", key: "bookings" },
-    { label: "Dépenses", width: "12%", key: "spent" },
+    // { label: "Dépenses", width: "12%", key: "spent" },
     { label: "Membre depuis", width: "12%", key: "joinDate" },
     { label: "Actions", width: "12%", key: "actions" },
   ];

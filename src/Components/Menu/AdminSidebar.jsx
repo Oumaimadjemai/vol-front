@@ -10,6 +10,7 @@ import {
   Settings,
   X,
   LogOut,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@mui/material";
 
@@ -20,6 +21,7 @@ const navItems = [
   { path: "/admin/users", label: "Utilisateurs", icon: Users },
   { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { path: "/admin/messages", label: "Messages", icon: MessageSquare },
+  {path:"/admin/reports", label:"Rapports", icon: AlertTriangle},
   { path: "/admin/analytics", label: "Analytiques", icon: BarChart3 },
   { path: "/admin/settings", label: "Paramètres", icon: Settings },
 ];
@@ -30,21 +32,21 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, handleLogout
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full w-60 bg-gray-900 text-white z-50 transform transition-transform ${
+        className={`fixed top-0 left-0 h-full w-60 bg-white text-white z-50 transform transition-transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
         <div className="flex flex-col h-full">
 
 <div
-  className="p-4 border-b border-gray-700 flex justify-between items-center
+  className="p-4  flex justify-between items-center
     
     hover:brightness-110 transition-all duration-200 cursor-pointer"
   onClick={() => setSidebarOpen(false)}
 >
   <div className="flex items-center gap-3">
     <div
-      className="w-10 h-10 rounded-lg bg-white flex items-center justify-center font-bold text-gray-900
+      className="w-10 h-10 rounded-lg bg-white flex items-center justify-center font-bold text-white
         bg-gradient-to-r from-[#00C0E8] to-[#0093e8]
         hover:brightness-110 transition-all duration-200"
     >
@@ -54,7 +56,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, handleLogout
   </div>
 
   <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
-    <X />
+    <X color="red"/>
   </button>
 </div>
 
@@ -78,7 +80,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, handleLogout
   ${
     isActive
       ? "text-white bg-gradient-to-r from-[#00C0E8] to-[#0093e8]"
-      : "text-gray-400 hover:text-white hover:bg-white/5"
+      : "text-gray-500 hover:text-[#00c0e8] hover:bg-white/5"
   }`}
                 >
                   <Icon size={20} />
@@ -89,7 +91,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen, handleLogout
           </nav>
 
           {/* LOGOUT */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 ">
             <Button
               onClick={handleLogout}
               variant="contained"

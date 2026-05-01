@@ -628,10 +628,7 @@ export default function LoginAdmin() {
                 <Sparkles className="w-3 h-3 text-yellow-500" />
                 Accès réservé aux administrateurs et agents autorisés
               </p>
-              <div className="mt-3 flex justify-center gap-4">
-                <span className="text-xs text-gray-400 hover:text-gray-600 transition-colors duration-300">🔒 Connexion sécurisée</span>
-                <span className="text-xs text-gray-400 hover:text-gray-600 transition-colors duration-300">🛡️ Protection des données</span>
-              </div>
+             
             </div>
           </motion.div>
         </motion.div>

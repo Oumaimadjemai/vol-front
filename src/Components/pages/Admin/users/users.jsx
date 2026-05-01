@@ -23,6 +23,7 @@ import AddUserDialog from './AddUserDialog';
 import EditUserDialog from './EditUserDialog';
 import DeleteDialog from './SuppDialog';
 import FeatureManagementDialog from './ManagementDialog';
+import EmailDialog from './EmailDialog';
 import { agentFeatures } from './Constants';
 import {
   Users,
@@ -32,8 +33,12 @@ import {
   Send,
   Mail,
   AtSign,
+  TrendingUp,
+  UserPlus,
+  Download,
 } from "lucide-react";
 import axiosInstance from "../../../../api/axiosInstance";
+import { motion } from "framer-motion";
 
 export default function UsersBoard() {
   const [users, setUsers] = useState([]);
@@ -150,40 +155,32 @@ export default function UsersBoard() {
       return aValue > bValue ? -1 : 1;
     });
 
-  const stats = [
-    { 
-      label: "Total utilisateurs", 
-      value: users.length, 
-      change: "+12%", 
-      icon: Users,
-      color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50"
-    },
-    { 
-      label: "Utilisateurs actifs", 
-      value: users.filter(u => u.status === "Actif").length, 
-      change: "+5%", 
-      icon: CheckCircle2,
-      color: "from-green-500 to-green-600",
-      bgColor: "bg-green-50"
-    },
-    { 
-      label: "Admins & Agents", 
-      value: users.filter(u => u.role === "Admin" || u.role === "Agent").length, 
-      change: "+2", 
-      icon: Shield,
-      color: "from-purple-500 to-purple-600",
-      bgColor: "bg-purple-50"
-    },
-    { 
-      label: "Voyageurs", 
-      value: users.filter(u => u.role === "Voyageur").length, 
-      change: "+15%", 
-      icon: User,
-      color: "from-orange-500 to-orange-600",
-      bgColor: "bg-orange-50"
-    },
-  ];
+const stats = [
+  { 
+    label: "Total utilisateurs", 
+    value: users.length, 
+    icon: Users,  // ✅ Correct - component reference
+    color: "from-cyan-50 to-blue-50" 
+  },
+  { 
+    label: "Utilisateurs actifs", 
+    value: users.filter(u => u.status === "Actif").length, 
+    icon: CheckCircle2,  // ✅ Correct
+    color: "from-green-50 to-emerald-50" 
+  },
+  { 
+    label: "Admins & Agents", 
+    value: users.filter(u => u.role === "Admin" || u.role === "Agent").length, 
+    icon: Shield,  // ✅ Correct
+    color: "from-purple-50 to-pink-50" 
+  },
+  { 
+    label: "Voyageurs", 
+    value: users.filter(u => u.role === "Voyageur").length, 
+    icon: User,  // ✅ Correct
+    color: "from-orange-50 to-red-50" 
+  },
+];
 
   const handleMenuOpen = (event, user, actionType = null) => {
     setAnchorEl(event.currentTarget);
@@ -226,55 +223,23 @@ export default function UsersBoard() {
     });
   };
 
-  // Ouvrir le dialogue d'email
   const handleOpenEmailDialog = (user) => {
     setSelectedUser(user);
-    setEmailData({
-      subject: `Message pour ${user.name}`,
-      content: `Bonjour ${user.name},\n\n`,
-    });
     setIsEmailDialogOpen(true);
     handleMenuClose();
   };
 
-  // Fermer le dialogue d'email
   const handleCloseEmailDialog = () => {
     setIsEmailDialogOpen(false);
     setSelectedUser(null);
-    setEmailData({ subject: "", content: "" });
   };
 
-  // Envoyer l'email (simulé)
   const handleSendEmail = () => {
-    if (!emailData.subject.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Veuillez saisir un sujet",
-        severity: "error",
-      });
-      return;
-    }
-    
-    if (!emailData.content.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Veuillez saisir un contenu",
-        severity: "error",
-      });
-      return;
-    }
-
-    // Simulation d'envoi d'email
-    console.log("Email envoyé à:", selectedUser?.email);
-    console.log("Sujet:", emailData.subject);
-    console.log("Contenu:", emailData.content);
-    
     setSnackbar({
       open: true,
       message: `Email envoyé avec succès à ${selectedUser?.name}`,
       severity: "success",
     });
-    
     handleCloseEmailDialog();
   };
 
@@ -475,151 +440,139 @@ export default function UsersBoard() {
   };
 
   const handleAddUser = async (newUser, resetForm) => {
-  // Validation de base
-  if (!newUser.email || !newUser.password) {
-    setSnackbar({
-      open: true,
-      message: "Veuillez remplir tous les champs obligatoires",
-      severity: "error",
-    });
-    return;
-  }
-  
-  if (newUser.password.length < 8) {
-    setSnackbar({
-      open: true,
-      message: "Le mot de passe doit contenir au moins 8 caractères",
-      severity: "error",
-    });
-    return;
-  }
-  
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.email)) {
-    setSnackbar({
-      open: true,
-      message: "Email invalide",
-      severity: "error",
-    });
-    return;
-  }
-
-  // Validation selon le rôle
-  if (newUser.role === "voyageur") {
-    if (!newUser.nom || !newUser.prenom || !newUser.telephone) {
+    if (!newUser.email || !newUser.password) {
       setSnackbar({
         open: true,
-        message: "Veuillez remplir tous les champs (nom, prénom, téléphone)",
+        message: "Veuillez remplir tous les champs obligatoires",
         severity: "error",
       });
       return;
     }
-  } else {
-    if (!newUser.username) {
-      setSnackbar({
-        open: true,
-        message: "Veuillez saisir un nom d'utilisateur",
-        severity: "error",
-      });
-      return;
-    }
-  }
-
-  if (newUser.role === "agent" && newUser.features.length === 0) {
-    setSnackbar({
-      open: true,
-      message: "Veuillez sélectionner au moins une fonctionnalité pour l'agent",
-      severity: "error",
-    });
-    return;
-  }
-
-  setIsLoading(true);
-  
-  try {
-    let response;
     
+    if (newUser.password.length < 8) {
+      setSnackbar({
+        open: true,
+        message: "Le mot de passe doit contenir au moins 8 caractères",
+        severity: "error",
+      });
+      return;
+    }
+    
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.email)) {
+      setSnackbar({
+        open: true,
+        message: "Email invalide",
+        severity: "error",
+      });
+      return;
+    }
+
     if (newUser.role === "voyageur") {
-      const signupData = {
-        email: newUser.email,
-        password: newUser.password,
-        nom: newUser.nom,
-        prenom: newUser.prenom,
-        telephone: newUser.telephone,
-      };
-      
-      console.log("Sending voyageur signup data:", signupData);
-      response = await axiosInstance.post('/auth-service/auth/signup/', signupData);
-      
+      if (!newUser.nom || !newUser.prenom || !newUser.telephone) {
+        setSnackbar({
+          open: true,
+          message: "Veuillez remplir tous les champs (nom, prénom, téléphone)",
+          severity: "error",
+        });
+        return;
+      }
     } else {
-      // CORRECTION ICI : Filtrer et mapper correctement les features
-      let featuresArray = [];
-      
-      if (newUser.features && newUser.features.length > 0) {
-        // newUser.features contient des IDs comme "bookings", "hotels", etc.
-        // Pas besoin de mapper, ce sont déjà les bonnes valeurs
-        featuresArray = newUser.features.filter(f => f && f !== undefined && f !== null);
-      }
-      
-      const userData = {
-        email: newUser.email,
-        username: newUser.username,
-        password: newUser.password,
-        role: newUser.role,
-        status: newUser.status || "active",
-        features: featuresArray,  // Utiliser directement le tableau filtré
-      };
-      
-      console.log("Sending user data:", JSON.stringify(userData, null, 2));
-      response = await axiosInstance.post('/auth-service/auth/users/create/', userData);
-    }
-    
-    console.log("User created successfully:", response.data);
-    
-    await fetchUsers();
-    
-    setIsAddUserOpen(false);
-    if (resetForm) resetForm();
-    
-    setSnackbar({
-      open: true,
-      message: `Utilisateur ${newUser.role === "voyageur" ? `${newUser.prenom} ${newUser.nom}` : newUser.username} ajouté avec succès`,
-      severity: "success",
-    });
-  } catch (error) {
-    console.error("Erreur lors de l'ajout:", error);
-    
-    let errorMessage = "Erreur lors de l'ajout de l'utilisateur";
-    
-    if (error.response?.data) {
-      console.log("Error response data:", error.response.data);
-      
-      if (typeof error.response.data === 'object') {
-        const errors = error.response.data;
-        if (errors.email) errorMessage = errors.email[0];
-        else if (errors.username) errorMessage = errors.username[0];
-        else if (errors.password) errorMessage = errors.password[0];
-        else if (errors.features) errorMessage = errors.features[0];
-        else if (errors.nom) errorMessage = errors.nom[0];
-        else if (errors.prenom) errorMessage = errors.prenom[0];
-        else if (errors.telephone) errorMessage = errors.telephone[0];
-        else if (errors.role) errorMessage = errors.role[0];
-        else if (errors.non_field_errors) errorMessage = errors.non_field_errors[0];
-        else if (errors.message) errorMessage = errors.message;
-        else if (typeof errors === 'string') errorMessage = errors;
-      } else if (typeof error.response.data === 'string') {
-        errorMessage = error.response.data;
+      if (!newUser.username) {
+        setSnackbar({
+          open: true,
+          message: "Veuillez saisir un nom d'utilisateur",
+          severity: "error",
+        });
+        return;
       }
     }
+
+    if (newUser.role === "agent" && newUser.features.length === 0) {
+      setSnackbar({
+        open: true,
+        message: "Veuillez sélectionner au moins une fonctionnalité pour l'agent",
+        severity: "error",
+      });
+      return;
+    }
+
+    setIsLoading(true);
     
-    setSnackbar({
-      open: true,
-      message: errorMessage,
-      severity: "error",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+    try {
+      let response;
+      
+      if (newUser.role === "voyageur") {
+        const signupData = {
+          email: newUser.email,
+          password: newUser.password,
+          nom: newUser.nom,
+          prenom: newUser.prenom,
+          telephone: newUser.telephone,
+        };
+        
+        response = await axiosInstance.post('/auth-service/auth/signup/', signupData);
+      } else {
+        let featuresArray = [];
+        
+        if (newUser.features && newUser.features.length > 0) {
+          featuresArray = newUser.features.filter(f => f && f !== undefined && f !== null);
+        }
+        
+        const userData = {
+          email: newUser.email,
+          username: newUser.username,
+          password: newUser.password,
+          role: newUser.role,
+          status: newUser.status || "active",
+          features: featuresArray,
+        };
+        
+        response = await axiosInstance.post('/auth-service/auth/users/create/', userData);
+      }
+      
+      await fetchUsers();
+      
+      setIsAddUserOpen(false);
+      if (resetForm) resetForm();
+      
+      setSnackbar({
+        open: true,
+        message: `Utilisateur ${newUser.role === "voyageur" ? `${newUser.prenom} ${newUser.nom}` : newUser.username} ajouté avec succès`,
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'ajout:", error);
+      
+      let errorMessage = "Erreur lors de l'ajout de l'utilisateur";
+      
+      if (error.response?.data) {
+        if (typeof error.response.data === 'object') {
+          const errors = error.response.data;
+          if (errors.email) errorMessage = errors.email[0];
+          else if (errors.username) errorMessage = errors.username[0];
+          else if (errors.password) errorMessage = errors.password[0];
+          else if (errors.features) errorMessage = errors.features[0];
+          else if (errors.nom) errorMessage = errors.nom[0];
+          else if (errors.prenom) errorMessage = errors.prenom[0];
+          else if (errors.telephone) errorMessage = errors.telephone[0];
+          else if (errors.role) errorMessage = errors.role[0];
+          else if (errors.non_field_errors) errorMessage = errors.non_field_errors[0];
+          else if (errors.message) errorMessage = errors.message;
+          else if (typeof errors === 'string') errorMessage = errors;
+        } else if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      }
+      
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -634,19 +587,95 @@ export default function UsersBoard() {
 
   if (isInitialLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00C0E8]"></div>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <Header onAddUser={() => setIsAddUserOpen(true)} userCount={filteredUsers.length} />
-        <StatsGrid stats={stats} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Hero Header */}
+      <div className="relative bg-gradient-to-r from-[#00C0E8] to-[#0096b8] overflow-hidden m-4 rounded-2xl">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
+        </div>
         
-        <Paper elevation={0} sx={{ borderRadius: 3, mb: 3, border: '1px solid #f0f0f0' }}>
+        <div className="relative max-w-7xl mx-auto px-4 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-center md:text-left">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="flex items-center gap-3  justify-center md:justify-start">
+                  <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
+                    <Users className="text-white text-2xl" />
+                  </div>
+                  <span className="text-white/80 text-sm font-medium tracking-wide">GESTION DES UTILISATEURS</span>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold text-white ">
+                  Utilisateurs
+                </h1>
+                
+              </motion.div>
+            </div>
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex gap-3"
+            >
+              <button className="bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-white/30 transition-all">
+                <Download className="w-4 h-4" />
+                Exporter
+              </button>
+              <button
+                onClick={() => setIsAddUserOpen(true)}
+                className="bg-white text-[#00C0E8] px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              >
+                <UserPlus className="w-4 h-4" />
+                Ajouter
+              </button>
+            </motion.div>
+          </div>
+        </div>
+        
+       
+        
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        {/* Stats Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5 -mt-8 relative z-10 mb-12">
+  {stats.map((stat, i) => {
+    const Icon = stat.icon;
+    return (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: i * 0.1 }}
+        className={`bg-gradient-to-br ${stat.color} backdrop-blur-sm rounded-2xl p-5 shadow-md hover:shadow-lg transition-all hover:-translate-y-1`}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="bg-white/50 backdrop-blur-sm p-2 rounded-xl">
+            <Icon className="text-[#00C0E8]" size={24} />  {/* Add size and color here */}
+          </div>
+          <span className="text-2xl font-bold text-gray-800">{stat.value}</span>
+        </div>
+        <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">{stat.label}</p>
+      </motion.div>
+    );
+  })}
+</div>
+
+
+        {/* Tabs */}
+        <Paper elevation={0} sx={{ borderRadius: 3, mb: 4, border: '1px solid #f0f0f0' }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -659,10 +688,10 @@ export default function UsersBoard() {
                 textTransform: 'none',
               },
               '& .Mui-selected': {
-                color: '#3b82f6',
+                color: '#00C0E8',
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#3b82f6',
+                backgroundColor: '#00C0E8',
                 height: 3,
               },
             }}
@@ -680,6 +709,7 @@ export default function UsersBoard() {
           </Tabs>
         </Paper>
         
+        {/* Filters */}
         <Filters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -691,6 +721,7 @@ export default function UsersBoard() {
           showRoleFilter={activeTab === 0}
         />
 
+        {/* Users Table */}
         <UsersTable
           users={filteredUsers}
           onMenuOpen={handleMenuOpen}
@@ -699,6 +730,7 @@ export default function UsersBoard() {
         />
       </div>
 
+      {/* Dialogs */}
       <ActionsMenu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -745,109 +777,12 @@ export default function UsersBoard() {
         isLoading={isLoading}
       />
 
-      {/* Email Dialog */}
-      <Dialog
+      <EmailDialog
         open={isEmailDialogOpen}
         onClose={handleCloseEmailDialog}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
-        <DialogTitle sx={{ 
-          borderBottom: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb',
-          px: 4,
-          py: 3
-        }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Mail className="w-5 h-5 text-blue-500" />
-                Envoyer un email
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Envoyer un message à {selectedUser?.name}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-              <Send className="w-6 h-6 text-blue-500" />
-            </div>
-          </div>
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: 4 }}>
-          <div className="space-y-4">
-            {/* Information du destinataire */}
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">Destinataire:</span>
-                <span className="font-medium text-gray-900">{selectedUser?.name}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <AtSign className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">Email:</span>
-                <span className="font-medium text-gray-900">{selectedUser?.email}</span>
-              </div>
-            </div>
-
-            {/* Champ Sujet */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Sujet <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={emailData.subject}
-                onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
-                placeholder="Sujet de l'email..."
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-              />
-            </div>
-
-            {/* Champ Contenu */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Message <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={emailData.content}
-                onChange={(e) => setEmailData({ ...emailData, content: e.target.value })}
-                placeholder="Votre message..."
-                rows={8}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
-              />
-            </div>
-
-            {/* Indication */}
-            <div className="text-xs text-gray-400 text-center">
-              L'email sera envoyé depuis l'adresse admin@votre-site.com
-            </div>
-          </div>
-        </DialogContent>
-        
-        <DialogActions sx={{ 
-          p: 3, 
-          borderTop: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb',
-          gap: 2
-        }}>
-          <button
-            onClick={handleCloseEmailDialog}
-            className="px-4 py-2 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-all"
-          >
-            Annuler
-          </button>
-          
-          <button
-            onClick={handleSendEmail}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            Envoyer l'email
-          </button>
-        </DialogActions>
-      </Dialog>
+        user={selectedUser}
+        onEmailSent={handleSendEmail}
+      />
 
       <Snackbar
         open={snackbar.open}

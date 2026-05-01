@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Eye, Download, Calendar, CheckCircle, XCircle, Clock, Plus, Plane, Users, CreditCard, MapPin, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  Search, Eye, Download, Calendar, CheckCircle, XCircle, Clock, 
+  Plus, Plane, Users, CreditCard,  ChevronLeft, 
+  ChevronRight, DollarSign 
+} from "lucide-react";
 import { toast } from "sonner";
 import FlightSearch from "../../../Vol/SearchFlight/FlightSearchPage";
 import { useUserRole } from "../../../../hooks/useUserRole";
 import axiosInstance from "../../../../api/axiosInstance";
 import * as XLSX from 'xlsx';
+import { motion } from "framer-motion";
+
 // Card Component
 const Card = ({ children, className = "" }) => (
   <div className={`bg-white rounded-2xl shadow-md ${className}`}>{children}</div>
@@ -138,7 +144,6 @@ export function Bookings() {
       const response = await axiosInstance.get(`/ms-reservation/reservations/?page=${page}`);
       const data = response.data;
       
-      // Transform to display format using the enriched data from backend
       const formattedBookings = data.results.map(res => ({
         id: res.id,
         reservation_number: res.reservation_number,
@@ -175,7 +180,6 @@ export function Bookings() {
     fetchBookings(1);
   }, []);
 
-  // Fetch full details including passengers and flight segments
   const fetchBookingDetails = async (bookingId) => {
     setIsLoadingDetails(true);
     try {
@@ -261,13 +265,7 @@ export function Bookings() {
     setSelectedBookingDetails(details);
   };
 
-  const handleNewReservation = () => {
-    if (isAdmin) {
-      navigate("/admin/search");
-    } else {
-      navigate("/search");
-    }
-  };
+ 
 
   // Calculate stats
   const totalBookings = totalCount;
@@ -278,6 +276,13 @@ export function Bookings() {
     .filter(b => b.original_status === "CONFIRMED")
     .reduce((sum, b) => sum + (b.total_price_raw || 0), 0);
 
+  const statsCards = [
+    { label: "Total", value: totalBookings, icon: <Calendar className="text-[#00C0E8]" size={24} />, color: "from-cyan-50 to-blue-50" },
+    { label: "Confirmées", value: confirmedCount, icon: <CheckCircle className="text-[#00C0E8]" size={22} />, color: "from-green-50 to-emerald-50" },
+    { label: "En attente", value: pendingCount, icon: <Clock className="text-[#00C0E8]" size={22} />, color: "from-yellow-50 to-orange-50" },
+    { label: "Annulées", value: cancelledCount, icon: <XCircle className="text-[#00C0E8]" size={22} />, color: "from-red-50 to-rose-50" },
+  ];
+
   if (roleLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -287,126 +292,126 @@ export function Bookings() {
   }
 
   return (
-    <div className="space-y-6 p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Réservations</h1>
-          <p className="text-gray-600 mt-1">
-            Gérez toutes les réservations de vols
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Hero Header avec pattern - matching Destinations page */}
+      <div className="relative bg-gradient-to-r from-[#00C0E8] to-[#0096b8] overflow-hidden m-4 rounded-xl">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleExport} variant="outline">
-            <Download className="size-4 mr-2" />
-            Exporter
-          </Button>
-          <Button onClick={handleNewReservation} variant="default">
-            <Plus className="size-4 mr-2" />
-            Nouvelle réservation
-          </Button>
+        
+        <div className="relative max-w-7xl mx-auto px-4 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-center md:text-left">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="flex items-center gap-3  justify-center md:justify-start">
+                  <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
+                    <Plane className="text-white text-2xl" />
+                  </div>
+                  <span className="text-white/80 text-sm font-medium tracking-wide">GESTION DES RÉSERVATIONS</span>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold text-white ">
+                  Réservations
+                </h1>
+              </motion.div>
+            </div>
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex gap-3"
+            >
+              <button
+                onClick={handleExport}
+                className="bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-white/30 transition-all"
+              >
+                <Download className="size-4" />
+                Exporter
+              </button>
+              
+            </motion.div>
+          </div>
         </div>
+        
+        {/* Wave decoration */}
+        
       </div>
 
-      {/* Simple Tabs */}
-      <div className="w-full">
-        <div className="flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("bookings")}
-            className={`px-4 py-2 font-medium transition-all relative ${
-              activeTab === "bookings"
-                ? "text-[#00C0E8] border-b-2 border-[#00C0E8]"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Liste des réservations
-          </button>
-          <button
-            onClick={() => setActiveTab("search")}
-            className={`px-4 py-2 font-medium transition-all relative flex items-center gap-2 ${
-              activeTab === "search"
-                ? "text-[#00C0E8] border-b-2 border-[#00C0E8]"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <Plus className="size-4" />
-            Rechercher un vol
-          </button>
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        {/* Stats Cards - matching Destinations page style */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 -mt-8 relative z-10 mb-10">
+          {statsCards.map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className={`bg-gradient-to-br ${stat.color} backdrop-blur-sm rounded-2xl p-5 shadow-md hover:shadow-lg transition-all hover:-translate-y-1`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-white/50 backdrop-blur-sm p-2 rounded-xl">
+                  {stat.icon}
+                </div>
+                <span className="text-2xl font-bold text-gray-800">{stat.value}</span>
+              </div>
+              <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Revenue Card - matching style */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-gradient-to-r from-[#00C0E8] to-[#0096b8] rounded-2xl p-6 shadow-lg mb-10"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/80 text-sm">Revenu total</p>
+              <h3 className="text-3xl font-bold text-white mt-1">{totalRevenue.toLocaleString()} DZD</h3>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+              <DollarSign className="size-6 text-white" />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="flex gap-2 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab("bookings")}
+              className={`px-4 py-2 font-medium transition-all relative ${
+                activeTab === "bookings"
+                  ? "text-[#00C0E8] border-b-2 border-[#00C0E8]"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Liste des réservations
+            </button>
+            <button
+              onClick={() => setActiveTab("search")}
+              className={`px-4 py-2 font-medium transition-all relative flex items-center gap-2 ${
+                activeTab === "search"
+                  ? "text-[#00C0E8] border-b-2 border-[#00C0E8]"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Plus className="size-4" />
+              Rechercher un vol
+            </button>
+          </div>
         </div>
 
         {/* Bookings List Tab */}
         {activeTab === "bookings" && (
-          <div className="mt-6 space-y-6">
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="border-0 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Total</p>
-                      <h3 className="text-2xl font-bold mt-1">{totalBookings}</h3>
-                    </div>
-                    <div className="bg-blue-50 p-3 rounded-xl">
-                      <Calendar className="size-5 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Confirmées</p>
-                      <h3 className="text-2xl font-bold mt-1 text-green-600">{confirmedCount}</h3>
-                    </div>
-                    <div className="bg-green-50 p-3 rounded-xl">
-                      <CheckCircle className="size-5 text-green-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">En attente</p>
-                      <h3 className="text-2xl font-bold mt-1 text-yellow-600">{pendingCount}</h3>
-                    </div>
-                    <div className="bg-yellow-50 p-3 rounded-xl">
-                      <Clock className="size-5 text-yellow-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Annulées/Échouées</p>
-                      <h3 className="text-2xl font-bold mt-1 text-red-600">{cancelledCount}</h3>
-                    </div>
-                    <div className="bg-red-50 p-3 rounded-xl">
-                      <XCircle className="size-5 text-red-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Revenue Card */}
-            <Card className="border-0 shadow-md bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm opacity-80">Revenu total</p>
-                    <h3 className="text-3xl font-bold mt-1">{totalRevenue.toLocaleString()} DZD</h3>
-                  </div>
-                  <div className="bg-white/20 p-3 rounded-xl">
-                    <CreditCard className="size-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+          <div className="space-y-6">
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
