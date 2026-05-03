@@ -28,7 +28,9 @@ import ResultatSearch from "../Components/Vol/ResultatSearchePage/ResultatSearch
 import Reservation from "../Components/Vol/Reservation/Reservation";
 import Profile from "../Components/pages/Voyageur/Home/Profile";
 import { Bookings } from "../Components/pages/Admin/Booking/Booking";
-
+import PaymentSuccess from "../Components/pages/PaymentSuccess";
+import PaymentCancel from "../Components/pages/PaymentCancel";
+import { ConfirmationPage } from '../Components/Vol/Reservation/ReservationSystem';
 export default function AppRoutes() {
   return (
     <Routes>
@@ -49,6 +51,10 @@ export default function AppRoutes() {
           element={<ResetPassword />}
         />
         <Route path="/profile" element={<Profile />} />
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+   <Route path="/payment/cancel" element={<PaymentCancel />} />
+     <Route path="/reservation-confirmation" element={<ConfirmationPage />} />
+
       </Route>
 
       {/* ADMIN PROTECTED - COMMENTED OUT FOR NOW */}
@@ -59,7 +65,7 @@ export default function AppRoutes() {
             <Route path="/admin/reservations" element={<Bookings />} />
             <Route path="/admin/reservation" element={<Reservation />} />
             <Route path="/admin/results" element={<ResultatSearch />} />
-          
+  
         </Route>
       </Route>
 
