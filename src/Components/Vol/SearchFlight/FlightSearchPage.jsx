@@ -65,8 +65,7 @@ export default function FlightSearch() {
     }
     updated[index][field] = value;
     if (field === "from" && updated[index].to === value) updated[index].to = "";
-    if (field === "to" && updated[index].from === value)
-      updated[index].from = "";
+    if (field === "to" && updated[index].from === value) updated[index].from = "";
     setMultiFlights(updated);
   };
 
@@ -120,7 +119,7 @@ export default function FlightSearch() {
             passengers,
             travelClass: flightClass,
             options,
-          },
+          }
         );
 
         searchData = {
@@ -194,6 +193,20 @@ export default function FlightSearch() {
     );
   }
 
+  // Get user name from localStorage
+  const getUserName = () => {
+    try {
+      const voyageur = localStorage.getItem("voyageur");
+      if (voyageur) {
+        const user = JSON.parse(voyageur);
+        return user.prenom || user.nom || "Voyageur";
+      }
+    } catch (e) {
+      return "Voyageur";
+    }
+    return "Voyageur";
+  };
+
   return (
     <div className="min-h-screen w-full p-6">
       <div className="w-full">
@@ -213,7 +226,7 @@ export default function FlightSearch() {
         {isAuthenticated && isVoyageur && (
           <>
             <h3 className="text-4xl text-gray-800 mb-2 text-left font-playfair font-bold">
-              Bonjour {localStorage.getItem("userName") || "Voyageur"}
+              Bonjour {getUserName()}
             </h3>
             <div className="w-40 h-1 bg-[#00C0E8] mb-8 rounded"></div>
             <p className="text-gray-600 mb-6">

@@ -3,7 +3,6 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import Login from "../authentication/Login";
 import Dialog from "@mui/material/Dialog";
 import Signup from "../authentication/Signup";
-
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
@@ -12,7 +11,7 @@ import ForgotPassword from "../authentication/ResetPassword";
 import en from "../../assets/images/English.jpg";
 import fr from "../../assets/images/francais.jpg";
 import alg from "../../assets/images/algerie.jpg";
-import {useTranslation} from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -22,12 +21,13 @@ export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [initials, setInitials] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
-  const [language, setLanguage] = useState("FR");
+  const [language, setLanguage] = useState(localStorage.getItem("lang")?.toUpperCase() || "FR");
   const [langAnchorEl, setLangAnchorEl] = useState(null);
-  const langOpen = Boolean(langAnchorEl);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const { t, i18n } = useTranslation();
   const open = Boolean(anchorEl);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const langOpen = Boolean(langAnchorEl);
 
   // Function to update auth state from localStorage
   const updateAuthState = () => {
@@ -37,11 +37,9 @@ export default function Navbar() {
     console.log("Navbar - Checking auth state:", { 
       hasToken: !!token, 
       hasVoyageur: !!voyageur,
-      token: token ? token.substring(0, 10) + "..." : null
     });
     
-    const hasToken = !!localStorage.getItem("access_token");
-    setIsAuthenticated(hasToken);
+    setIsAuthenticated(!!token);
     
     if (voyageur) {
       try {
@@ -60,28 +58,20 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    console.log("Navbar - Initial mount, checking auth");
     updateAuthState();
     
     const handleStorageChange = (e) => {
-      console.log("Navbar - Storage changed:", e.key, e.newValue);
       if (e.key === "access_token" || e.key === "voyageur") {
         updateAuthState();
       }
     };
     
     const handleAuthChange = () => {
-      console.log("Navbar - Auth change event received");
       updateAuthState();
     };
     
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("auth-change", handleAuthChange);
-    
-    setTimeout(() => {
-      console.log("Navbar - Delayed check");
-      updateAuthState();
-    }, 500);
     
     return () => {
       window.removeEventListener("storage", handleStorageChange);
@@ -141,12 +131,10 @@ export default function Navbar() {
     setAnchorEl(null);
   };
 
-const handleProfileClick = () => {
-  handleClose();
-  navigate("/profile"); // Add this navigation
-};
-
-  console.log("Navbar - Rendering, isAuthenticated:", isAuthenticated);
+  const handleProfileClick = () => {
+    handleClose();
+    navigate("/profile");
+  };
 
   const handleLangClick = (event) => {
     setLangAnchorEl(event.currentTarget);
@@ -159,33 +147,22 @@ const handleProfileClick = () => {
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
     setLangAnchorEl(null);
-
     i18n.changeLanguage(lang.toLowerCase());
     localStorage.setItem("lang", lang.toLowerCase());
-    if (lang === "AR") {
-      document.body.dir = "rtl";
-    } else {
-      document.body.dir = "ltr";
-    }
+    document.body.dir = lang === "AR" ? "rtl" : "ltr";
   };
 
-  // Function to get flag image based on language
   const getFlagImage = (lang) => {
     switch(lang) {
-      case "FR":
-        return fr;
-      case "EN":
-        return en;
-      case "AR":
-        return alg;
-      default:
-        return fr;
+      case "FR": return fr;
+      case "EN": return en;
+      case "AR": return alg;
+      default: return fr;
     }
   };
 
   return (
     <>
-      {/* Navbar with custom shadow */}
       <nav className="bg-white shadow-custom relative z-50">
         <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
           <div 
@@ -266,13 +243,13 @@ const handleProfileClick = () => {
                 </Menu>
               </div>
             )}
+            
             <div 
               className="flex items-center space-x-2 cursor-pointer group"
               onClick={handleLangClick}
               aria-expanded={langOpen}
               aria-haspopup="true"
             >
-              {/* Cercle avec le drapeau */}
               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-[#00C0E8] transition-all duration-300">
                 <img 
                   src={getFlagImage(language)} 
@@ -280,8 +257,6 @@ const handleProfileClick = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              
-              {/* Texte à côté du cercle */}
               <div className="flex items-center space-x-1">
                 <span className="text-sm font-medium text-gray-700 group-hover:text-[#00C0E8] transition-colors">
                   {language}
@@ -301,14 +276,8 @@ const handleProfileClick = () => {
               anchorEl={langAnchorEl}
               open={langOpen}
               onClose={handleLangClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               PaperProps={{
                 sx: {
                   mt: 1,
@@ -327,21 +296,10 @@ const handleProfileClick = () => {
                   gap: 1.5,
                   py: 1.5,
                   bgcolor: language === "FR" ? 'rgba(0, 192, 232, 0.1)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(0, 192, 232, 0.05)' },
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(0, 192, 232, 0.1)',
-                    '&:hover': {
-                      bgcolor: 'rgba(0, 192, 232, 0.15)',
-                    }
-                  }
                 }}
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden">
-                  <img 
-                    src={fr} 
-                    alt="French flag"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={fr} alt="French flag" className="w-full h-full object-cover" />
                 </div>
                 <span className="flex-1">Français</span>
                 {language === "FR" && (
@@ -360,21 +318,10 @@ const handleProfileClick = () => {
                   gap: 1.5,
                   py: 1.5,
                   bgcolor: language === "EN" ? 'rgba(0, 192, 232, 0.1)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(0, 192, 232, 0.05)' },
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(0, 192, 232, 0.1)',
-                    '&:hover': {
-                      bgcolor: 'rgba(0, 192, 232, 0.15)',
-                    }
-                  }
                 }}
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden">
-                  <img 
-                    src={en} 
-                    alt="English flag"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={en} alt="English flag" className="w-full h-full object-cover" />
                 </div>
                 <span className="flex-1">English</span>
                 {language === "EN" && (
@@ -393,21 +340,10 @@ const handleProfileClick = () => {
                   gap: 1.5,
                   py: 1.5,
                   bgcolor: language === "AR" ? 'rgba(0, 192, 232, 0.1)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(0, 192, 232, 0.05)' },
-                  '&.Mui-selected': {
-                    bgcolor: 'rgba(0, 192, 232, 0.1)',
-                    '&:hover': {
-                      bgcolor: 'rgba(0, 192, 232, 0.15)',
-                    }
-                  }
                 }}
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden">
-                  <img 
-                    src={alg} 
-                    alt="Algeria flag"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={alg} alt="Algeria flag" className="w-full h-full object-cover" />
                 </div>
                 <span className="flex-1">العربية</span>
                 {language === "AR" && (
@@ -423,28 +359,15 @@ const handleProfileClick = () => {
               className="md:hidden flex flex-col justify-center items-center w-10 h-10 space-y-1"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <span
-                className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
-                  isMobileMenuOpen ? "rotate-45 translate-y-1.5" : ""
-                }`}
-              />
-              <span
-                className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
-                  isMobileMenuOpen ? "opacity-0" : ""
-                }`}
-              />
-              <span
-                className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${
-                  isMobileMenuOpen ? "-rotate-45 -translate-y-1.5" : ""
-                }`}
-              />
+              <span className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${isMobileMenuOpen ? "rotate-45 translate-y-1.5" : ""}`} />
+              <span className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${isMobileMenuOpen ? "opacity-0" : ""}`} />
+              <span className={`h-0.5 w-6 bg-[#00C0E8] transition-all duration-300 ${isMobileMenuOpen ? "-rotate-45 -translate-y-1.5" : ""}`} />
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Add the custom shadow style to your global CSS or in a style tag */}
-      <style jsx>{`
+      <style>{`
         .shadow-custom {
           box-shadow: 0 4px 20px rgba(0, 192, 232, 0.15), 0 1px 2px rgba(0, 192, 232, 0.1);
         }
@@ -528,11 +451,7 @@ const handleProfileClick = () => {
       </Dialog>
       
       {/* Mobile Menu */}
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-500 ${
-          isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
+      <div className={`md:hidden overflow-hidden transition-all duration-500 ${isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="bg-white shadow-md px-6 py-6 space-y-6">
           <MobileNavItem to="/#hero" onClick={() => setIsMobileMenuOpen(false)}>
             {t("accueil")}
@@ -555,13 +474,14 @@ const handleProfileClick = () => {
   );
 }
 
+// NavItem Component
 function NavItem({ to, children }) {
   const location = useLocation();
-
-  const isActive =
-    to === "/#hero"
-      ? location.pathname === "/" && !location.hash
-      : location.hash === to.replace("/", "");
+  const hash = to.replace("/", "");
+  
+  const isActive = to === "/#hero"
+    ? location.pathname === "/" && !location.hash
+    : location.hash === hash;
 
   return (
     <NavLink
@@ -573,15 +493,12 @@ function NavItem({ to, children }) {
       }`}
     >
       {children}
-      <span
-        className={`absolute left-0 -bottom-1 h-[2px] bg-[#00C0E8] transition-all duration-300 ${
-          isActive ? "w-full" : "w-0"
-        }`}
-      />
+      <span className={`absolute left-0 -bottom-1 h-[2px] bg-[#00C0E8] transition-all duration-300 ${isActive ? "w-full" : "w-0"}`} />
     </NavLink>
   );
 }
 
+// MobileNavItem Component
 function MobileNavItem({ to, children, onClick }) {
   return (
     <NavLink

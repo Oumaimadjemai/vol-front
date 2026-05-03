@@ -36,6 +36,9 @@ import { Messages } from "../Components/pages/Admin/Messages/Messages";
 import { Reports } from "../Components/pages/Admin/Reports/Reports";
 import { Analytics } from "../Components/pages/Admin/Analytics/Analytics";
 
+import PaymentSuccess from "../Components/pages/PaymentSuccess";
+import PaymentCancel from "../Components/pages/PaymentCancel";
+import { ConfirmationPage } from '../Components/Vol/Reservation/ReservationSystem';
 export default function AppRoutes() {
   return (
     <Routes>
@@ -59,9 +62,10 @@ export default function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:uid/:token/" element={<ResetPassword />} />
         <Route path="/profile" element={<Profile />} />
+         <Route path="/payment/success" element={<PaymentSuccess />} />
+   <Route path="/payment/cancel" element={<PaymentCancel />} />
+     <Route path="/reservation-confirmation" element={<ConfirmationPage />} />
       </Route>
-      
-      {/* AGENCY ADMIN ROUTES */}
       <Route path="/admin/login" element={<LoginAdmin />} />
       <Route element={<ProtectedAdmin />}>
         <Route element={<AdminLayout />}>
