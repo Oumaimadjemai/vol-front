@@ -4,8 +4,6 @@ import useAirports from "../../../hooks/useAirports";
 import SearchForm from "./SearchForm";
 import axiosInstance from "../../../api/axiosInstance";
 import { useUserRole } from "../../../hooks/useUserRole";
-import axiosInstance from "../../../api/axiosInstance";
-import { useUserRole } from "../../../hooks/useUserRole";
 
 export default function FlightSearch() {
   const navigate = useNavigate();
@@ -26,9 +24,6 @@ export default function FlightSearch() {
   const [multiFlights, setMultiFlights] = useState([
     { from: "", to: "", date: "" },
   ]);
-  const [multiFlights, setMultiFlights] = useState([
-    { from: "", to: "", date: "" },
-  ]);
   const [passengers, setPassengers] = useState({ adult: 1, child: 0, baby: 0 });
   const [isSearching, setIsSearching] = useState(false);
 
@@ -36,8 +31,6 @@ export default function FlightSearch() {
   const isAgent = role === "agent";
   const isVoyageur = role === "voyageur";
   const totalPassengers = passengers.adult + passengers.child + passengers.baby;
-  
-  const changeCount = (type, value) => {
   
   const changeCount = (type, value) => {
     setPassengers((prev) => {
@@ -72,10 +65,7 @@ export default function FlightSearch() {
     }
     updated[index][field] = value;
     if (field === "from" && updated[index].to === value) updated[index].to = "";
-    if (field === "to" && updated[index].from === value)
-      updated[index].from = "";
-    if (field === "to" && updated[index].from === value)
-      updated[index].from = "";
+    if (field === "to" && updated[index].from === value) updated[index].from = "";
     setMultiFlights(updated);
   };
 
@@ -118,7 +108,6 @@ export default function FlightSearch() {
     try {
       setIsSearching(true);
 
-
       let response;
       let searchData;
 
@@ -130,17 +119,7 @@ export default function FlightSearch() {
             passengers,
             travelClass: flightClass,
             options,
-          },
-        );
-
-        response = await axiosInstance.post(
-          "/service-vols/api/flights/multi-destination",
-          {
-            flights: multiFlights,
-            passengers,
-            travelClass: flightClass,
-            options,
-          },
+          }
         );
 
         searchData = {
@@ -152,11 +131,8 @@ export default function FlightSearch() {
             travelClass: flightClass,
             options,
           },
-            options,
-          },
         };
       } else {
-        response = await axiosInstance.get("/service-vols/api/flights/search", {
         response = await axiosInstance.get("/service-vols/api/flights/search", {
           params: {
             origin: from,
@@ -173,7 +149,6 @@ export default function FlightSearch() {
           },
         });
 
-
         searchData = {
           flights: response.data,
           type: activeTab === "retour" ? "roundtrip" : "oneway",
@@ -184,8 +159,6 @@ export default function FlightSearch() {
             returnDate,
             passengers,
             travelClass: flightClass,
-            options,
-          },
             options,
           },
         };
@@ -220,6 +193,20 @@ export default function FlightSearch() {
     );
   }
 
+  // Get user name from localStorage
+  const getUserName = () => {
+    try {
+      const voyageur = localStorage.getItem("voyageur");
+      if (voyageur) {
+        const user = JSON.parse(voyageur);
+        return user.prenom || user.nom || "Voyageur";
+      }
+    } catch (e) {
+      return "Voyageur";
+    }
+    return "Voyageur";
+  };
+
   return (
     <div className="min-h-screen w-full p-6">
       <div className="w-full">
@@ -239,7 +226,7 @@ export default function FlightSearch() {
         {isAuthenticated && isVoyageur && (
           <>
             <h3 className="text-4xl text-gray-800 mb-2 text-left font-playfair font-bold">
-              Bonjour {localStorage.getItem("userName") || "Voyageur"}
+              Bonjour {getUserName()}
             </h3>
             <div className="w-40 h-1 bg-[#00C0E8] mb-8 rounded"></div>
             <p className="text-gray-600 mb-6">

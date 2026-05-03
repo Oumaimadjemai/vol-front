@@ -108,136 +108,213 @@ export default function ReservationSystem({ reservationData }) {
     }
   };
 
-  const handleAdminVoyageurChange = async (voyageurId) => {
-    setSelectedVoyageurId(voyageurId);
-    if (!voyageurId) {
-      setEmail("");
-      setPhone("");
-      setWilaya("");
-      setCommune("");
-      setSexe("");
-      setDateNaissance("");
-      setNumPassport("");
-      setDateExpPassport("");
-      setPassportPhotoPreview(null);
-      setPassportPhoto(null);
-      setPassportVerified(false);
-      setAuthenticatedUser(null);
-      setVoyageurId(null);
-      return;
-    }
-    const selected = allVoyageurs.find((v) => v.id === parseInt(voyageurId));
-    if (selected) {
-      setAuthenticatedUser(selected);
-      setVoyageurId(selected.id);
-      setEmail(selected.email || "");
-      setPhone(selected.telephone || "");
-      setWilaya(selected.wilaya || "");
-      setCommune(selected.commune || "");
-      setSexe(selected.sexe || "");
-      setDateNaissance(selected.date_naissance || "");
-      setNumPassport(selected.num_passport || "");
-      setDateExpPassport(selected.date_exp_passport || "");
-      if (selected.passport_image) {
-        setPassportPhotoPreview(selected.passport_image);
-        setPassportPhoto(selected.passport_image);
-        setPassportVerified(selected.passport_verified || false);
-      }
-    }
-  };
-
-  // Initialize
+  // Initialize additional passengers
   useEffect(() => {
     if (!isInitialized) {
+      // Create additional passenger cards (total - 1)
       const initialAdditionalPassengers = [];
       for (let i = 0; i < additionalPassengersCount; i++) {
         initialAdditionalPassengers.push({
-          id: i + 1,
-          title: i < passengers.adult - 1 ? "Mr" : "Mme",
-          firstName: "",
-          lastName: "",
-          birthDate: "",
-          passportNumber: "",
-          passportImage: null,
-          passportExpiry: "",
+          id: i + 1, 
+          title: i < (passengers.adult - 1) ? 'Mr' : 'Mme', 
+          firstName: '', 
+          lastName: '',
+          birthDate: '', 
+          passportNumber: '', 
+          passportImage: null, 
+          passportExpiry: ''
         });
       }
       setAdditionalPassengersList(initialAdditionalPassengers);
+      
+      // Fetch authenticated user to fill voyageur form
       fetchAuthenticatedUser();
+      
       setIsInitialized(true);
     }
   }, [additionalPassengersCount, passengers.adult, isInitialized]);
 
   const updateAdditionalPassenger = useCallback((index, field, value) => {
-    setAdditionalPassengersList((prev) => {
+    setAdditionalPassengersList(prev => {
       const newList = [...prev];
       newList[index] = { ...newList[index], [field]: value };
       return newList;
     });
   }, []);
 
-  const updateField = async (field, value) => {
-    if (!voyageurId) {
-      if (field === "email") setEmail(value);
-      if (field === "phone") setPhone(value);
-      if (field === "wilaya") setWilaya(value);
-      if (field === "commune") setCommune(value);
-      if (field === "sexe") setSexe(value);
-      if (field === "dateNaissance") setDateNaissance(value);
-      if (field === "numPassport") setNumPassport(value);
-      if (field === "dateExpPassport") setDateExpPassport(value);
+  // Handle passport photo upload with drag and drop
+  const handlePhotoUpload = async (file) => {
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner une image (JPEG, PNG, etc.)');
       return;
     }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La photo ne doit pas dépasser 5MB');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPassportPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    
+    setPassportPhoto(file);
+    
+    if (voyageurId) {
+      await uploadPassportPhoto(file);
+    }
+  };
+
+  const uploadPassportPhoto = async (file) => {
+    if (!voyageurId) return;
+    
     setIsUpdating(true);
     try {
-      const updateData = {};
-      if (field === "email") updateData.email = value;
-      if (field === "phone") updateData.telephone = value;
-      if (field === "wilaya") updateData.wilaya = value;
-      if (field === "commune") updateData.commune = value;
-      if (field === "sexe") updateData.sexe = value;
-      if (field === "dateNaissance") updateData.date_naissance = value;
-      if (field === "numPassport") updateData.num_passport = value;
-      if (field === "dateExpPassport") updateData.date_exp_passport = value;
-      await axiosInstance.patch(
-        `/auth-service/auth/voyageurs/${voyageurId}/update/`,
-        updateData,
-      );
-      if (field === "email") setEmail(value);
-      if (field === "phone") setPhone(value);
-      if (field === "wilaya") setWilaya(value);
-      if (field === "commune") setCommune(value);
-      if (field === "sexe") setSexe(value);
-      if (field === "dateNaissance") setDateNaissance(value);
-      if (field === "numPassport") setNumPassport(value);
-      if (field === "dateExpPassport") setDateExpPassport(value);
+      const formData = new FormData();
+      formData.append('passport_photo', file);
+      
+      const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      console.log('Photo uploaded successfully:', response.data);
+      alert('Photo du passeport mise à jour avec succès!');
     } catch (error) {
-      console.error(`Error updating ${field}:`, error);
+      console.error('Error uploading photo:', error);
+      alert('Erreur lors du téléchargement de la photo');
     } finally {
       setIsUpdating(false);
     }
   };
 
+  const removePhoto = async () => {
+    setPassportPhoto(null);
+    setPassportPhotoPreview(null);
+    
+    if (voyageurId) {
+      setIsUpdating(true);
+      try {
+        const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, {
+          passport_photo: null
+        });
+        console.log('Photo removed:', response.data);
+        alert('Photo supprimée avec succès!');
+      } catch (error) {
+        console.error('Error removing photo:', error);
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handlePhotoUpload(files[0]);
+    }
+  };
+
+  const updateField = async (field, value) => {
+    if (!voyageurId) {
+      if (field === 'email') setEmail(value);
+      if (field === 'phone') setPhone(value);
+      if (field === 'wilaya') setWilaya(value);
+      if (field === 'commune') setCommune(value);
+      if (field === 'sexe') setSexe(value);
+      if (field === 'dateNaissance') setDateNaissance(value);
+      if (field === 'numPassport') setNumPassport(value);
+      if (field === 'dateExpPassport') setDateExpPassport(value);
+      return;
+    }
+    
+    setIsUpdating(true);
+    try {
+      const updateData = {};
+      if (field === 'email') updateData.email = value;
+      if (field === 'phone') updateData.telephone = value;
+      if (field === 'wilaya') updateData.wilaya = value;
+      if (field === 'commune') updateData.commune = value;
+      if (field === 'sexe') updateData.sexe = value;
+      if (field === 'dateNaissance') updateData.date_naissance = value;
+      if (field === 'numPassport') updateData.num_passport = value;
+      if (field === 'dateExpPassport') updateData.date_exp_passport = value;
+      
+      const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, updateData);
+      console.log(`Field ${field} updated:`, response.data);
+      
+      if (field === 'email') setEmail(value);
+      if (field === 'phone') setPhone(value);
+      if (field === 'wilaya') setWilaya(value);
+      if (field === 'commune') setCommune(value);
+      if (field === 'sexe') setSexe(value);
+      if (field === 'dateNaissance') setDateNaissance(value);
+      if (field === 'numPassport') setNumPassport(value);
+      if (field === 'dateExpPassport') setDateExpPassport(value);
+      
+      const input = document.getElementById(`field-${field}`);
+      if (input) {
+        input.classList.add('border-green-500');
+        setTimeout(() => {
+          input.classList.remove('border-green-500');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+      alert(`Erreur lors de la mise à jour: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleFieldBlur = (field, value) => {
+    updateField(field, value);
+  };
+
   const handleCardInputChange = (field, value) => {
-    if (field === "cardNumber") {
-      let cleaned = value.replace(/\s/g, "");
+    if (field === 'cardNumber') {
+      let cleaned = value.replace(/\s/g, '');
       if (cleaned.length > 16) cleaned = cleaned.slice(0, 16);
-      let formatted = cleaned.replace(/(\d{4})/g, "$1 ").trim();
-      setCardInfo((prev) => ({ ...prev, cardNumber: formatted }));
-    } else if (field === "expiryDate") {
-      let cleaned = value.replace(/\//g, "");
+      let formatted = cleaned.replace(/(\d{4})/g, '$1 ').trim();
+      setCardInfo(prev => ({ ...prev, cardNumber: formatted }));
+    } else if (field === 'expiryDate') {
+      let cleaned = value.replace(/\//g, '');
       if (cleaned.length > 4) cleaned = cleaned.slice(0, 4);
       let formatted = cleaned;
       if (cleaned.length >= 3) {
-        formatted = cleaned.slice(0, 2) + "/" + cleaned.slice(2);
+        formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
       }
-      setCardInfo((prev) => ({ ...prev, expiryDate: formatted }));
-    } else if (field === "cvv") {
+      setCardInfo(prev => ({ ...prev, expiryDate: formatted }));
+    } else if (field === 'cvv') {
       if (value.length <= 4) {
-        setCardInfo((prev) => ({ ...prev, cvv: value }));
+        setCardInfo(prev => ({ ...prev, cvv: value }));
       }
     } else {
-      setCardInfo((prev) => ({ ...prev, [field]: value }));
+      setCardInfo(prev => ({ ...prev, [field]: value }));
     }
   };
 
@@ -245,295 +322,271 @@ export default function ReservationSystem({ reservationData }) {
     if (isMulti) {
       const segments = flight?.segments || flight?.flights || [];
       return {
-        type: "multi",
-        segments: segments.map((segment) => ({
+        type: 'multi',
+        segments: segments.map(segment => ({
           airline: segment.airline,
           flightNumber: segment.flightNumber,
           departure: {
             airport: segment.departure?.airport,
             city: getCityFromAirport(segment.departure?.airport),
             time: segment.departure?.time,
-            date: segment.departure?.date,
+            date: segment.departure?.date
           },
           arrival: {
             airport: segment.arrival?.airport,
             city: getCityFromAirport(segment.arrival?.airport),
             time: segment.arrival?.time,
-            date: segment.arrival?.date,
+            date: segment.arrival?.date
           },
           duration: segment.duration,
-          stops: segment.stops || 0,
+          stops: segment.stops || 0
         })),
-        totalPrice: flight?.totalPrice || flight?.prixTotal || 0,
+        totalPrice: flight?.totalPrice || flight?.prixTotal || 0
       };
     } else {
       return {
-        type: isRoundTrip ? "roundtrip" : "oneway",
+        type: isRoundTrip ? 'roundtrip' : 'oneway',
         outbound: {
           airline: flight?.airline,
           flightNumber: flight?.flightNumber,
-          aircraft: flight?.aircraft || "Boeing 737",
+          aircraft: flight?.aircraft || 'Boeing 737',
           departure: {
             airport: flight?.departure?.airport,
             city: getCityFromAirport(flight?.departure?.airport),
             time: flight?.departure?.time,
-            date: flight?.departure?.date || searchParams.departureDate,
+            date: flight?.departure?.date || searchParams.departureDate
           },
           arrival: {
             airport: flight?.arrival?.airport,
             city: getCityFromAirport(flight?.arrival?.airport),
             time: flight?.arrival?.time,
-            date: flight?.arrival?.date || searchParams.departureDate,
+            date: flight?.arrival?.date || searchParams.departureDate
           },
           duration: flight?.duration,
           totalDuration: flight?.totalDuration || flight?.duration,
           stops: flight?.stops || 0,
-          stopover: flight?.stopover || "Queen Alia International Airport",
-          stopoverDuration: flight?.stopoverDuration || "1h 25m",
-          class: searchParams.flightClass || "Économique",
-          baggage: {
-            cabin: flight?.baggage?.cabin || "1 PC",
-            checked: flight?.baggage?.checked || "1 PC",
-          },
+          stopover: flight?.stopover || 'Queen Alia International Airport',
+          stopoverDuration: flight?.stopoverDuration || '1h 25m',
+          class: searchParams.flightClass || 'Économique',
+          baggage: { cabin: flight?.baggage?.cabin || '1 PC', checked: flight?.baggage?.checked || '1 PC' }
         },
         totalPrice: flight?.price?.total || flight?.totalPrice || 0,
-        return:
-          isRoundTrip && flight?.returnFlight
-            ? {
-                airline: flight.returnFlight.airline,
-                flightNumber: flight.returnFlight.flightNumber,
-                aircraft: flight.returnFlight.aircraft || "AIRBUS A321NEO",
-                departure: {
-                  airport: flight.returnFlight.departure?.airport,
-                  city: getCityFromAirport(
-                    flight.returnFlight.departure?.airport,
-                  ),
-                  time: flight.returnFlight.departure?.time,
-                  date:
-                    flight.returnFlight.departure?.date ||
-                    searchParams.returnDate,
-                },
-                arrival: {
-                  airport: flight.returnFlight.arrival?.airport,
-                  city: getCityFromAirport(
-                    flight.returnFlight.arrival?.airport,
-                  ),
-                  time: flight.returnFlight.arrival?.time,
-                  date:
-                    flight.returnFlight.arrival?.date ||
-                    searchParams.returnDate,
-                },
-                duration: flight.returnFlight.duration,
-                totalDuration:
-                  flight.returnFlight.totalDuration ||
-                  flight.returnFlight.duration,
-                stops: flight.returnFlight.stops || 0,
-                stopover:
-                  flight.returnFlight.stopover ||
-                  "Queen Alia International Airport",
-                stopoverDuration:
-                  flight.returnFlight.stopoverDuration || "1h 25m",
-                class: searchParams.flightClass || "Économique",
-                baggage: {
-                  cabin: flight.returnFlight?.baggage?.cabin || "1 PC",
-                  checked: flight.returnFlight?.baggage?.checked || "1 PC",
-                },
-              }
-            : null,
+        return: isRoundTrip && flight?.returnFlight ? {
+          airline: flight.returnFlight.airline,
+          flightNumber: flight.returnFlight.flightNumber,
+          aircraft: flight.returnFlight.aircraft || 'AIRBUS A321NEO',
+          departure: {
+            airport: flight.returnFlight.departure?.airport,
+            city: getCityFromAirport(flight.returnFlight.departure?.airport),
+            time: flight.returnFlight.departure?.time,
+            date: flight.returnFlight.departure?.date || searchParams.returnDate
+          },
+          arrival: {
+            airport: flight.returnFlight.arrival?.airport,
+            city: getCityFromAirport(flight.returnFlight.arrival?.airport),
+            time: flight.returnFlight.arrival?.time,
+            date: flight.returnFlight.arrival?.date || searchParams.returnDate
+          },
+          duration: flight.returnFlight.duration,
+          totalDuration: flight.returnFlight.totalDuration || flight.returnFlight.duration,
+          stops: flight.returnFlight.stops || 0,
+          stopover: flight.returnFlight.stopover || 'Queen Alia International Airport',
+          stopoverDuration: flight.returnFlight.stopoverDuration || '1h 25m',
+          class: searchParams.flightClass || 'Économique',
+          baggage: { cabin: flight.returnFlight.baggage?.cabin || '1 PC', checked: flight.returnFlight.baggage?.checked || '1 PC' }
+        } : null
       };
     }
   };
 
   const formattedFlight = formatFlightDetails();
-  const getTotalPrice = () =>
-    formattedFlight.totalPrice.toLocaleString("fr-DZ") + " DZD";
+  const getTotalPrice = () => formattedFlight.totalPrice.toLocaleString('fr-DZ') + ' DZD';
 
+  // Prepare passenger data for API
   const preparePassengerData = () => {
-    let mainPassenger = {};
-    if (isAdmin && selectedVoyageurId && authenticatedUser) {
-      mainPassenger = {
-        nom: authenticatedUser.nom,
-        prenom: authenticatedUser.prenom,
-        date_naissance: dateNaissance,
-        sexe: sexe,
-        num_passport: numPassport,
-        date_exp_passport: dateExpPassport,
-        email: email,
-        telephone: phone,
-        nationalite: "DZ",
-        lieu_naissance: commune,
-      };
-    } else if (!isAdmin && authenticatedUser) {
-      mainPassenger = {
-        nom: authenticatedUser.nom,
-        prenom: authenticatedUser.prenom,
-        date_naissance: dateNaissance,
-        sexe: sexe,
-        num_passport: numPassport,
-        date_exp_passport: dateExpPassport,
-        email: email,
-        telephone: phone,
-        nationalite: "DZ",
-        lieu_naissance: commune,
-      };
-    } else {
-      mainPassenger = {
-        nom: "",
-        prenom: "",
-        date_naissance: dateNaissance,
-        sexe: sexe,
-        num_passport: numPassport,
-        date_exp_passport: dateExpPassport,
-        email: email,
-        telephone: phone,
-        nationalite: "DZ",
-        lieu_naissance: commune,
-      };
-    }
-
+    // If there are additional passengers (total > 1), send them
     if (additionalPassengersCount > 0) {
-      const additional = additionalPassengersList.map((p) => ({
-        nom: p.lastName,
-        prenom: p.firstName,
-        date_naissance: p.birthDate || null,
-        sexe: p.title === "Mr" ? "homme" : "femme",
-        num_passport: p.passportNumber || "",
-        date_exp_passport: p.passportExpiry || null,
+      return additionalPassengersList.map((passenger) => ({
+        nom: passenger.lastName,
+        prenom: passenger.firstName,
+        date_naissance: passenger.birthDate || null,
+        sexe: passenger.title === 'Mr' ? 'homme' : 'femme',
+        num_passport: passenger.passportNumber || '',
+        date_exp_passport: passenger.passportExpiry || null,
         email: email,
         telephone: phone,
-        nationalite: "DZ",
-        lieu_naissance: commune,
+        nationalite: 'DZ',
+        lieu_naissance: commune
       }));
-      return [mainPassenger, ...additional];
     }
-    return [mainPassenger];
+    
+    // If only one passenger, send the main traveler data
+    return [{
+      nom: authenticatedUser?.nom || '',
+      prenom: authenticatedUser?.prenom || '',
+      date_naissance: dateNaissance || null,
+      sexe: sexe || 'homme',
+      num_passport: numPassport || '',
+      date_exp_passport: dateExpPassport || null,
+      email: email,
+      telephone: phone,
+      nationalite: 'DZ',
+      lieu_naissance: commune
+    }];
   };
 
-  const prepareSelectedFlights = () => {
-    if (flight) {
-      const flightData = {
-        flight_id: flight.id || "1",
-        airline: flight.airline,
-        flightNumber: flight.flightNumber,
-        departure: {
-          airport: flight.departure?.airport || searchParams?.from,
-          time: flight.departure?.time,
-          terminal: flight.departure?.terminal || "",
-        },
-        arrival: {
-          airport: flight.arrival?.airport || searchParams?.to,
-          time: flight.arrival?.time,
-          terminal: flight.arrival?.terminal || "",
-        },
-        duration: flight.duration,
-        price: {
-          total: flight.price?.total || formattedFlight.totalPrice,
-          currency: "DZD",
-          perPassenger:
-            (flight.price?.total || formattedFlight.totalPrice) /
-            (passengers.adult + passengers.child),
-        },
-        baggage: { quantity: 1, included: "1 bagage(s)" },
-        refundable: { isRefundable: false, policy: "Non remboursable" },
-        seatsAvailable: 9,
-        segments: flight.segments || [],
-      };
-
-      if (isRoundTrip && flight.returnFlight) {
-        return [
-          flightData,
-          {
-            flight_id: flight.returnFlight.id || "2",
-            airline: flight.returnFlight.airline,
-            flightNumber: flight.returnFlight.flightNumber,
-            departure: {
-              airport:
-                flight.returnFlight.departure?.airport || searchParams?.to,
-              time: flight.returnFlight.departure?.time,
-              terminal: flight.returnFlight.departure?.terminal || "",
-            },
-            arrival: {
-              airport:
-                flight.returnFlight.arrival?.airport || searchParams?.from,
-              time: flight.returnFlight.arrival?.time,
-              terminal: flight.returnFlight.arrival?.terminal || "",
-            },
-            duration: flight.returnFlight.duration,
-            price: {
-              total:
-                flight.returnFlight.price?.total ||
-                formattedFlight.totalPrice / 2,
-              currency: "DZD",
-              perPassenger:
-                (flight.returnFlight.price?.total ||
-                  formattedFlight.totalPrice / 2) /
-                (passengers.adult + passengers.child),
-            },
-            baggage: { quantity: 1, included: "1 bagage(s)" },
-            refundable: { isRefundable: false, policy: "Non remboursable" },
-            seatsAvailable: 7,
-            segments: flight.returnFlight.segments || [],
+ // Prepare selected flights for API
+const prepareSelectedFlights = () => {
+  // If we have flight data
+  if (flight) {
+    const flightData = {
+      flight_id: flight.id || '1',
+      airline: flight.airline,
+      flightNumber: flight.flightNumber,
+      departure: {
+        airport: flight.departure?.airport || searchParams?.from,
+        time: flight.departure?.time,
+        terminal: flight.departure?.terminal || ''
+      },
+      arrival: {
+        airport: flight.arrival?.airport || searchParams?.to,
+        time: flight.arrival?.time,
+        terminal: flight.arrival?.terminal || ''
+      },
+      duration: flight.duration,
+      price: {
+        total: flight.price?.total || formattedFlight.totalPrice,
+        currency: 'DZD',
+        perPassenger: (flight.price?.total || formattedFlight.totalPrice) / (passengers.adult + passengers.child)
+      },
+      baggage: { quantity: 1, included: "1 bagage(s)" },
+      refundable: { isRefundable: false, policy: "Non remboursable" },
+      seatsAvailable: 9,
+      segments: flight.segments || []
+    };
+    
+    // For round trip with return flight
+    if (isRoundTrip && flight.returnFlight) {
+      return [
+        flightData,
+        {
+          flight_id: flight.returnFlight.id || '2',
+          airline: flight.returnFlight.airline,
+          flightNumber: flight.returnFlight.flightNumber,
+          departure: {
+            airport: flight.returnFlight.departure?.airport || searchParams?.to,
+            time: flight.returnFlight.departure?.time,
+            terminal: flight.returnFlight.departure?.terminal || ''
           },
-        ];
-      }
-      return [flightData];
+          arrival: {
+            airport: flight.returnFlight.arrival?.airport || searchParams?.from,
+            time: flight.returnFlight.arrival?.time,
+            terminal: flight.returnFlight.arrival?.terminal || ''
+          },
+          duration: flight.returnFlight.duration,
+          price: {
+            total: flight.returnFlight.price?.total || formattedFlight.totalPrice / 2,
+            currency: 'DZD',
+            perPassenger: (flight.returnFlight.price?.total || formattedFlight.totalPrice / 2) / (passengers.adult + passengers.child)
+          },
+          baggage: { quantity: 1, included: "1 bagage(s)" },
+          refundable: { isRefundable: false, policy: "Non remboursable" },
+          seatsAvailable: 7,
+          segments: flight.returnFlight.segments || []
+        }
+      ];
     }
-    return [];
+    
+    return [flightData];
+  }
+  
+  // Fallback: return empty array if no flight data
+  return [];
+};
+
+ // Prepare reservation data for API
+const prepareReservationData = () => {
+  const tripType = isRoundTrip ? 'ALLER_RETOUR' : 'ALLER_SIMPLE';
+  
+  // Get origin and destination from multiple possible sources
+  let originCode = null;
+  let destinationCode = null;
+  
+  // Try to get from searchParams (using from/to or origin/destination)
+  if (searchParams) {
+    originCode = searchParams.from || searchParams.origin;
+    destinationCode = searchParams.to || searchParams.destination;
+  }
+  
+  // If still undefined, try to get from flight object
+  if (!originCode && flight) {
+    originCode = flight?.departure?.airport;
+  }
+  if (!destinationCode && flight) {
+    destinationCode = flight?.arrival?.airport;
+  }
+  
+  // If still undefined, try to get from selected_flights if already prepared
+  if (!originCode && flight?.segments?.length > 0) {
+    originCode = flight.segments[0]?.departure?.airport;
+    destinationCode = flight.segments[flight.segments.length - 1]?.arrival?.airport;
+  }
+  
+  console.log('Origin code from searchParams:', searchParams?.from || searchParams?.origin);
+  console.log('Destination code from searchParams:', searchParams?.to || searchParams?.destination);
+  console.log('Final origin:', originCode);
+  console.log('Final destination:', destinationCode);
+  
+  const searchParamsData = {
+    origin: originCode,
+    destination: destinationCode,
+    departureDate: searchParams?.departureDate,
+    adults: passengers.adult || 1,
+    children: passengers.child || 0,
+    infants: passengers.baby || 0,
+    travelClass: searchParams?.flightClass?.toUpperCase() || "ECONOMY"
   };
 
-  const prepareReservationData = () => {
-    const tripType = isRoundTrip ? "ALLER_RETOUR" : "ALLER_SIMPLE";
-    let originCode = null;
-    let destinationCode = null;
-    if (searchParams) {
-      originCode = searchParams.from || searchParams.origin;
-      destinationCode = searchParams.to || searchParams.destination;
-    }
-    if (!originCode && flight) originCode = flight?.departure?.airport;
-    if (!destinationCode && flight) destinationCode = flight?.arrival?.airport;
-    if (!originCode && flight?.segments?.length > 0) {
-      originCode = flight.segments[0]?.departure?.airport;
-      destinationCode =
-        flight.segments[flight.segments.length - 1]?.arrival?.airport;
-    }
+  if (isRoundTrip && searchParams?.returnDate) {
+    searchParamsData.returnDate = searchParams.returnDate;
+  }
 
-    const searchParamsData = {
-      origin: originCode,
-      destination: destinationCode,
-      departureDate: searchParams?.departureDate,
-      adults: passengers.adult || 1,
-      children: passengers.child || 0,
-      infants: passengers.baby || 0,
-      travelClass: searchParams?.flightClass?.toUpperCase() || "ECONOMY",
-    };
-    if (isRoundTrip && searchParams?.returnDate)
-      searchParamsData.returnDate = searchParams.returnDate;
+  // Map payment method
+  let paymentMethodValue = '';
+  if (paymentMethod === 'cib') {
+    paymentMethodValue = 'CARD';
+  } else if (paymentMethod === 'delivery') {
+    paymentMethodValue = 'DELIVERY';
+  } else if (paymentMethod === 'cash') {
+    paymentMethodValue = 'CASH';
+  }
 
-    let paymentMethodValue = "";
-    if (paymentMethod === "cib") paymentMethodValue = "CARD";
-    else if (paymentMethod === "delivery") paymentMethodValue = "DELIVERY";
-    else if (paymentMethod === "cash") paymentMethodValue = "CASH";
-
-    return {
-      trip_type: tripType,
-      search_params: searchParamsData,
-      selected_flights: prepareSelectedFlights(),
-      passengers: preparePassengerData(),
-      existing_passenger_ids: [],
-      payment_method: paymentMethodValue,
-    };
+  const reservationData = {
+    trip_type: tripType,
+    search_params: searchParamsData,
+    selected_flights: prepareSelectedFlights(),
+    passengers: preparePassengerData(),
+    existing_passenger_ids: [],
+    payment_method: paymentMethodValue
   };
+  
+  console.log('Final reservation data:', reservationData);
+  
+  return reservationData;
+};
 
+  // Create reservation
   const createReservation = async () => {
     try {
       const reservationData = prepareReservationData();
-      const response = await axiosInstance.post(
-        "/ms-reservation/reservations/",
-        reservationData,
-      );
+      console.log('Creating reservation with data:', reservationData);
+      
+      const response = await axiosInstance.post('/ms-reservation/reservations/', reservationData);
+      console.log('Reservation created:', response.data);
+      
       return response.data;
     } catch (error) {
-      console.error("Create reservation error:", error);
+      console.error('Error creating reservation:', error.response?.data || error.message);
       throw error;
     }
   };
@@ -710,18 +763,10 @@ if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
         <div className="lg:col-span-2">
           <AnimatePresence mode="wait">
             {currentStep === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
+              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                 <div className="flex items-center gap-2 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-r from-[#00C0E8] to-[#0096b8] rounded-full"></div>
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    Détails du vol
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-800">Détails du vol</h2>
                 </div>
                 {isMulti ? (
                   <MultiFlightDetailsCard segments={formattedFlight.segments} />
@@ -737,222 +782,226 @@ if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
             )}
 
             {currentStep === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
+              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                 <div className="flex items-center gap-2 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-r from-[#00C0E8] to-[#0096b8] rounded-full"></div>
                   <h2 className="text-2xl font-bold text-gray-800">
-                    Informations voyageurs ({totalPassengersCount} passager
-                    {totalPassengersCount > 1 ? "s" : ""})
+                    Informations voyageurs ({totalPassengersCount} passager{totalPassengersCount > 1 ? 's' : ''})
                   </h2>
                 </div>
-
-                {isAdmin && (
-                  <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
-                    <label className="block text-gray-700 font-semibold mb-2 flex items-center gap-2">
-                      <FaUsers className="text-[#00C0E8]" /> Réserver pour :
-                    </label>
-                    <select
-                      value={selectedVoyageurId || ""}
-                      onChange={(e) =>
-                        handleAdminVoyageurChange(e.target.value)
-                      }
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20"
-                    >
-                      <option value="">-- Choisir un voyageur --</option>
-                      {allVoyageurs.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.prenom} {v.nom} ({v.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
+                
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                      <FaUser className="text-[#00C0E8]" /> Voyageur principal
+                      <FaUser className="text-[#00C0E8]" />
+                      Voyageur principal
                     </h3>
                     {isUpdating && (
                       <div className="flex items-center gap-2 text-sm text-blue-500">
-                        <FaSpinner className="animate-spin" /> Mise à jour...
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        Mise à jour...
                       </div>
                     )}
                   </div>
+                  
                   {isLoadingUser && (
-                    <div className="mb-4 text-sm text-blue-600">
-                      Chargement de vos informations...
-                    </div>
+                    <div className="mb-4 text-sm text-blue-600">Chargement de vos informations...</div>
                   )}
+                  
                   {authenticatedUser && (
                     <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
                       ✓ Vos informations ont été automatiquement remplies
                     </div>
                   )}
-
-                  <PassportUploader
-  voyageurId={voyageurId}
-  initialPreview={passportPhotoPreview}
-  initialVerified={passportVerified}
-  onVerified={(v) => setPassportVerified(v)}
-  onRemove={() => {
-    setPassportPhoto(null);
-    setPassportPhotoPreview(null);
-    setPassportVerified(false);
-  }}
-/>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  <div className="space-y-6">
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        Email *
-                      </label>
-                      <input
-                        id="field-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onBlur={(e) => updateField("email", e.target.value)}
-                        className="w-full border rounded-xl px-4 py-2.5"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        Téléphone *
-                      </label>
-                      <div className="flex gap-2">
-                        <div className="flex items-center px-4 border rounded-xl bg-gray-50">
-                          <FaPhone className="text-gray-400" />
-                          <span className="ml-2 text-gray-600">+213</span>
-                        </div>
+                      <label className="block text-gray-700 font-semibold mb-2">Photo du passeport</label>
+                      <div
+                        onDragEnter={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+                          isDragging 
+                            ? 'border-[#00C0E8] bg-[#00C0E8]/10' 
+                            : passportPhotoPreview 
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-gray-300 hover:border-[#00C0E8] hover:bg-[#00C0E8]/5'
+                        }`}
+                      >
                         <input
-                          id="field-phone"
-                          type="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          onBlur={(e) => updateField("phone", e.target.value)}
-                          className="flex-1 border rounded-xl px-4 py-2.5"
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e.target.files?.[0])}
+                          className="hidden"
                         />
+                        
+                        {passportPhotoPreview ? (
+                          <div className="relative">
+                            <img 
+                              src={passportPhotoPreview} 
+                              alt="Aperçu du passeport" 
+                              className="max-h-32 mx-auto rounded-lg object-contain"
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removePhoto();
+                              }}
+                              className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                            >
+                              <FaTrash className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <FaCamera className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-600">
+                              Glissez-déposez une photo ou cliquez pour sélectionner
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              JPEG, PNG, GIF (max 5MB)
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        Wilaya *
-                      </label>
-                      <CustomSelect
-                        value={wilaya}
-                        onChange={(value) => {
-                          setWilaya(value);
-                          updateField("wilaya", value);
-                        }}
-                        options={WILAYAS}
-                        placeholder="Sélectionnez une wilaya"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        Commune *
-                      </label>
-                      <input
-                        id="field-commune"
-                        type="text"
-                        value={commune}
-                        onChange={(e) => setCommune(e.target.value)}
-                        onBlur={(e) => updateField("commune", e.target.value)}
-                        className="w-full border rounded-xl px-4 py-2.5"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-200 mt-4">
-                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      <FaPassport className="text-[#00C0E8]" /> Informations
-                      personnelles
-                    </h4>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-gray-700 font-semibold mb-2">
-                          Civilité *
-                        </label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              value="homme"
-                              checked={sexe === "homme"}
-                              onChange={(e) => {
-                                setSexe(e.target.value);
-                                updateField("sexe", e.target.value);
-                              }}
-                            />
-                            <span>Homme</span>
-                          </label>
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              value="femme"
-                              checked={sexe === "femme"}
-                              onChange={(e) => {
-                                setSexe(e.target.value);
-                                updateField("sexe", e.target.value);
-                              }}
-                            />
-                            <span>Femme</span>
-                          </label>
+                        <label className="block text-gray-700 font-semibold mb-2">Adresse e-mail *</label>
+                        <input
+                          id="field-email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          onBlur={(e) => handleFieldBlur('email', e.target.value)}
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2">Numéro de téléphone *</label>
+                        <div className="flex gap-2">
+                          <div className="flex items-center px-4 border border-gray-300 rounded-xl bg-gray-50">
+                            <FaPhone className="text-gray-400" />
+                            <span className="ml-2 text-gray-600">+213</span>
+                          </div>
+                          <input
+                            id="field-phone"
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            onBlur={(e) => handleFieldBlur('phone', e.target.value)}
+                            placeholder="5XX XX XX XX"
+                            className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none"
+                          />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-gray-700 font-semibold mb-2">
-                          Date de naissance *
-                        </label>
-                        <DatePicker
-                          value={dateNaissance}
+                        <label className="block text-gray-700 font-semibold mb-2">Wilaya *</label>
+                        <CustomSelect 
+                          value={wilaya} 
                           onChange={(value) => {
-                            setDateNaissance(value);
-                            updateField("dateNaissance", value);
-                          }}
-                          placeholder="JJ/MM/AAAA"
-                          maxDate={new Date().toISOString().split("T")[0]}
+                            setWilaya(value);
+                            handleFieldBlur('wilaya', value);
+                          }} 
+                          options={WILAYAS} 
+                          placeholder="Sélectionnez une wilaya" 
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-700 font-semibold mb-2">
-                          Numéro de passeport *
-                        </label>
+                        <label className="block text-gray-700 font-semibold mb-2">Commune *</label>
                         <input
-                          id="field-numPassport"
+                          id="field-commune"
                           type="text"
-                          value={numPassport}
-                          onChange={(e) => setNumPassport(e.target.value)}
-                          onBlur={(e) =>
-                            updateField("numPassport", e.target.value)
-                          }
-                          className="w-full border rounded-xl px-4 py-2.5"
+                          value={commune}
+                          onChange={(e) => setCommune(e.target.value)}
+                          onBlur={(e) => handleFieldBlur('commune', e.target.value)}
+                          placeholder="Entrez votre commune"
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none"
                         />
                       </div>
-                      <div>
-                        <label className="block text-gray-700 font-semibold mb-2">
-                          Date d'expiration *
-                        </label>
-                        <DatePicker
-                          value={dateExpPassport}
-                          onChange={(value) => {
-                            setDateExpPassport(value);
-                            updateField("dateExpPassport", value);
-                          }}
-                          placeholder="JJ/MM/AAAA"
-                          minDate={new Date().toISOString().split("T")[0]}
-                        />
+                    </div>
+                    
+                    <div className="pt-4 border-t border-gray-200">
+                      <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <FaPassport className="text-[#00C0E8]" />
+                        Informations personnelles
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-gray-700 font-semibold mb-2">Civilité *</label>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input 
+                                type="radio" 
+                                value="homme" 
+                                checked={sexe === 'homme'} 
+                                onChange={(e) => {
+                                  setSexe(e.target.value);
+                                  handleFieldBlur('sexe', e.target.value);
+                                }} 
+                              />
+                              <span>Homme</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input 
+                                type="radio" 
+                                value="femme" 
+                                checked={sexe === 'femme'} 
+                                onChange={(e) => {
+                                  setSexe(e.target.value);
+                                  handleFieldBlur('sexe', e.target.value);
+                                }} 
+                              />
+                              <span>Femme</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-semibold mb-2">Date de naissance *</label>
+                          <DatePicker
+                            value={dateNaissance}
+                            onChange={(value) => {
+                              setDateNaissance(value);
+                              handleFieldBlur('dateNaissance', value);
+                            }}
+                            placeholder="JJ/MM/AAAA"
+                            maxDate={new Date().toISOString().split('T')[0]}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-semibold mb-2">Numéro de passeport *</label>
+                          <input
+                            id="field-numPassport"
+                            type="text"
+                            value={numPassport}
+                            onChange={(e) => setNumPassport(e.target.value)}
+                            onBlur={(e) => handleFieldBlur('numPassport', e.target.value)}
+                            placeholder="Ex: A12345678"
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-semibold mb-2">Date d'expiration passeport *</label>
+                          <DatePicker 
+                            value={dateExpPassport} 
+                            onChange={(value) => {
+                              setDateExpPassport(value);
+                              handleFieldBlur('dateExpPassport', value);
+                            }}
+                            placeholder="JJ/MM/AAAA" 
+                            minDate={new Date().toISOString().split('T')[0]} 
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+                
                 {additionalPassengersCount > 0 && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
