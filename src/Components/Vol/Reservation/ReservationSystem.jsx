@@ -1,153 +1,107 @@
-// ReservationSystem.jsx - With passport verification added
-import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaEnvelope,
-  FaPhone,
-  FaCreditCard,
-  FaMoneyBill,
-  FaShieldAlt,
-  FaCheck,
-  FaWhatsapp,
-  FaDownload,
-  FaPrint,
-  FaUser,
-  FaPassport,
-  FaCamera,
-  FaTrash,
-  FaInfoCircle,
-  FaPlane,
-  FaUsers,
-  FaExclamationTriangle,
-  FaSpinner,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaUpload,
-} from "react-icons/fa";
-import { DatePicker } from "./DatePicker";
-import { CustomSelect } from "./CustomSelect";
-import { FlightDetailsCard } from "./FlightDetailsCard";
-import { MultiFlightDetailsCard } from "./MultiFlightDetailsCard";
-import { StepIndicator } from "./StepIndicator";
-import { Sidebar } from "./Sidebar";
-import { PassengerFormComponent } from "./PassengerFormComponent";
-import { WILAYAS, getCityFromAirport } from "./constants/flightConstants";
-import axiosInstance from "../../../api/axiosInstance";
-import { toast } from "sonner";
-import { PassportUploader } from "./PassportUploader";
+// ReservationSystem.jsx - Complete fixed version
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaChevronLeft, FaChevronRight, FaEnvelope, FaPhone, FaCreditCard, FaMoneyBill, FaShieldAlt, FaCheck, FaWhatsapp, FaDownload, FaPrint, FaUserEdit, FaTimes, FaSave, FaUser, FaIdCard, FaCalendarAlt, FaPassport, FaCamera, FaUpload, FaTrash, FaImage, FaInfoCircle, FaPlane } from 'react-icons/fa';
+import { DatePicker } from './DatePicker';
+import { CustomSelect } from './CustomSelect';
+import { FlightDetailsCard } from './FlightDetailsCard';
+import { MultiFlightDetailsCard } from './MultiFlightDetailsCard';
+import { StepIndicator } from './StepIndicator';
+import { Sidebar } from './Sidebar';
+import { PassengerFormComponent } from './PassengerFormComponent';
+import { WILAYAS, getCityFromAirport } from './constants/flightConstants';
+import axiosInstance from '../../../api/axiosInstance';
+import { toast } from 'sonner';
+
 
 export default function ReservationSystem({ reservationData }) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [wilaya, setWilaya] = useState("");
-  const [commune, setCommune] = useState("");
-  const [pays, setPays] = useState("DZ");
-  const [sexe, setSexe] = useState("");
-  const [dateNaissance, setDateNaissance] = useState("");
-  const [numPassport, setNumPassport] = useState("");
-  const [dateExpPassport, setDateExpPassport] = useState("");
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [wilaya, setWilaya] = useState('');
+  const [commune, setCommune] = useState('');
+  const [pays, setPays] = useState('DZ');
+  const [sexe, setSexe] = useState('');
+  const [dateNaissance, setDateNaissance] = useState('');
+  const [numPassport, setNumPassport] = useState('');
+  const [dateExpPassport, setDateExpPassport] = useState('');
   const [passportPhoto, setPassportPhoto] = useState(null);
   const [passportPhotoPreview, setPassportPhotoPreview] = useState(null);
-  const [passportVerified, setPassportVerified] = useState(false);
-
   const [additionalPassengersList, setAdditionalPassengersList] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [reservationComplete, setReservationComplete] = useState(false);
   const [reservationId, setReservationId] = useState(null);
   const [bookingResponse, setBookingResponse] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [cardInfo, setCardInfo] = useState({
-    cardNumber: "",
-    cardHolder: "",
-    expiryDate: "",
-    cvv: "",
-  });
+  const [cardInfo, setCardInfo] = useState({ cardNumber: '', cardHolder: '', expiryDate: '', cvv: '' });
   const [isLoadingUser, setIsLoadingUser] = useState(false);
   const [authenticatedUser, setAuthenticatedUser] = useState(null);
   const [voyageurId, setVoyageurId] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
-
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
-  const [userRole, setUserRole] = useState(null);
-  const [allVoyageurs, setAllVoyageurs] = useState([]);
-  const [selectedVoyageurId, setSelectedVoyageurId] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const flight = reservationData?.flight;
   const isMulti = reservationData?.isMulti || false;
-  const passengers = reservationData?.passengers || {
-    adult: 1,
-    child: 0,
-    baby: 0,
-  };
+  const passengers = reservationData?.passengers || { adult: 1, child: 0, baby: 0 };
   const searchParams = reservationData?.searchParams || {};
-  const isRoundTrip = searchParams.type === "retour";
-
-  const totalPassengersCount =
-    (passengers.adult || 0) + (passengers.child || 0) + (passengers.baby || 0);
+  const isRoundTrip = searchParams.type === 'retour';
+  
+  // Calculate total passengers count
+  const totalPassengersCount = (passengers.adult || 0) + (passengers.child || 0) + (passengers.baby || 0);
+  // Number of additional passenger cards = total - 1 (main traveler is the voyageur form)
   const additionalPassengersCount = Math.max(0, totalPassengersCount - 1);
-
-  // ==================== PASSPORT VERIFICATION ====================
 
   // Fetch authenticated user info
   const fetchAuthenticatedUser = async () => {
     setIsLoadingUser(true);
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem('access_token');
       if (!token) {
-        setUserRole("guest");
-        setIsLoadingUser(false);
+        console.log('No access token found');
         return null;
       }
 
-      const response = await axiosInstance.get("/auth-service/auth/me/");
+      const response = await axiosInstance.get('/auth-service/auth/me/');
+      console.log('User data from /me:', response.data);
+      
       const currentUser = response.data;
-      const roleData = currentUser.role;
-      setUserRole(roleData);
-      setIsAdmin(roleData === "admin");
-
-      if (roleData === "admin") {
-        const voyageursResp = await axiosInstance.get(
-          "/auth-service/auth/voyageurs/",
-        );
-        setAllVoyageurs(voyageursResp.data.results || voyageursResp.data || []);
-      } else if (roleData === "voyageur") {
-        if (currentUser && currentUser.id) {
-          const voyageurResponse = await axiosInstance.get(
-            `/auth-service/auth/voyageurs/by-user/${currentUser.id}/`,
-          );
+      
+      if (currentUser && currentUser.id) {
+        try {
+          const voyageurResponse = await axiosInstance.get(`/auth-service/auth/voyageurs/by-user/${currentUser.id}/`);
           const voyageurData = voyageurResponse.data;
+          
           setAuthenticatedUser(voyageurData);
           setVoyageurId(voyageurData.id);
-          setSelectedVoyageurId(voyageurData.id);
-
-          setEmail(voyageurData.email || currentUser.email || "");
-          setPhone(voyageurData.telephone || "");
-          setWilaya(voyageurData.wilaya || "");
-          setCommune(voyageurData.commune || "");
-          setPays(voyageurData.pays || "DZ");
-          setSexe(voyageurData.sexe || "");
-          setDateNaissance(voyageurData.date_naissance || "");
-          setNumPassport(voyageurData.num_passport || "");
-          setDateExpPassport(voyageurData.date_exp_passport || "");
-
-          // Load passport if exists
-          if (voyageurData.passport_image) {
-            setPassportPhotoPreview(voyageurData.passport_image);
-            setPassportPhoto(voyageurData.passport_image);
-            setPassportVerified(voyageurData.passport_verified || false);
+          
+          // Auto-fill the voyageur form with user data
+          setEmail(voyageurData.email || currentUser.email || '');
+          setPhone(voyageurData.telephone || '');
+          setWilaya(voyageurData.wilaya || '');
+          setCommune(voyageurData.commune || '');
+          setPays(voyageurData.pays || 'DZ');
+          setSexe(voyageurData.sexe || '');
+          setDateNaissance(voyageurData.date_naissance || '');
+          setNumPassport(voyageurData.num_passport || '');
+          setDateExpPassport(voyageurData.date_exp_passport || '');
+          if (voyageurData.passport_photo) {
+            setPassportPhotoPreview(voyageurData.passport_photo);
           }
+          
+          return voyageurData;
+        } catch (err) {
+          console.log('No voyageur profile found');
+          setEmail(currentUser.email || '');
+          return null;
         }
       }
+      
       return null;
     } catch (error) {
-      console.error("Error fetching authenticated user:", error);
-      setUserRole("guest");
+      console.error('Error fetching authenticated user:', error.response?.data || error.message);
       return null;
     } finally {
       setIsLoadingUser(false);
@@ -584,187 +538,159 @@ export default function ReservationSystem({ reservationData }) {
     }
   };
 
+  // Confirm price
   const confirmPrice = async (reservationId) => {
-    const response = await axiosInstance.post(
-      `/ms-reservation/reservations/${reservationId}/confirm_price/`,
-    );
-    return response.data;
-  };
-
-  const bookReservation = async (reservationId) => {
-    const response = await axiosInstance.post(
-      `/ms-reservation/reservations/${reservationId}/book/`,
-    );
-    return response.data;
-  };
-
-  const processPayment = async () => {
-    setIsProcessing(true);
     try {
-      const reservation = await createReservation();
-      await confirmPrice(reservation.id);
-      const bookingResult = await bookReservation(reservation.id);
-      setBookingResponse(bookingResult);
-      setReservationId(reservation.id);
-      setReservationComplete(true);
-      setCurrentStep(4);
-      window.scrollTo(0, 0);
+      console.log('Confirming price for reservation:', reservationId);
+      const response = await axiosInstance.post(`/ms-reservation/reservations/${reservationId}/confirm_price/`);
+      console.log('Price confirmed:', response.data);
+      return response.data;
     } catch (error) {
-      toast.error(`Erreur: ${error.response?.data?.message || error.message}`);
-    } finally {
-      setIsProcessing(false);
+      console.error('Error confirming price:', error.response?.data || error.message);
+      throw error;
     }
   };
+
+  // Book reservation
+  const bookReservation = async (reservationId) => {
+    try {
+      console.log('Booking reservation:', reservationId);
+      const response = await axiosInstance.post(`/ms-reservation/reservations/${reservationId}/book/`);
+      console.log('Booking response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error booking reservation:', error.response?.data || error.message);
+      throw error;
+    }
+  };
+
+ const processPayment = async () => {
+  setIsProcessing(true);
+  try {
+    const reservation = await createReservation();
+    const newReservationId = reservation.id;
+    
+    await confirmPrice(newReservationId);
+    const bookingResult = await bookReservation(newReservationId);
+    
+    const totalPriceValue = parseFloat(getTotalPrice().replace(' DZD', ''));
+    
+    //  PAIEMENT POUR TOUTES LES MÉTHODES
+    let paymentMethodValue = '';
+    
+    if (paymentMethod === 'cib') paymentMethodValue = 'CIB';
+    else if (paymentMethod === 'cash') paymentMethodValue = 'CASH';
+    else if (paymentMethod === 'delivery') paymentMethodValue = 'DELIVERY';
+    
+    const paymentResponse = await axiosInstance.post('/ms-paiement/api/payments/create-payment', {
+      reservationId: newReservationId,
+      amount: totalPriceValue,
+      customerName: authenticatedUser?.nom || 'Client',
+      customerEmail: email,
+      paymentMethod: paymentMethodValue
+    });
+    
+    console.log('Payment response:', paymentResponse.data);
+    
+    sessionStorage.setItem('reservationId', newReservationId);
+    sessionStorage.setItem('bookingResponse', JSON.stringify(bookingResult));
+
+if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
+  window.location.href = paymentResponse.data.paymentUrl;
+  return;
+}
+    
+    // Pour CASH et DELIVERY, afficher confirmation
+    setBookingResponse(bookingResult);
+    setReservationId(newReservationId);
+    setReservationComplete(true);
+    setCurrentStep(4);
+    window.scrollTo(0, 0);
+    
+  } catch (error) {
+    console.error('Payment process failed:', error);
+    alert(`Erreur lors du traitement: ${error.response?.data?.message || error.message}`);
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const validatePassengerInfo = () => {
     if (!email || !phone || !wilaya || !commune) {
-      toast.error("Veuillez remplir toutes les coordonnées");
+      alert('Veuillez remplir toutes les coordonnées');
       return false;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Email invalide");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Veuillez entrer une adresse email valide');
       return false;
     }
-    if (!/^[0-9]{9,10}$/.test(phone.replace(/\s/g, ""))) {
-      toast.error("Téléphone invalide");
+    const phoneRegex = /^[0-9]{9,10}$/;
+    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+      alert('Veuillez entrer un numéro de téléphone valide');
       return false;
     }
+    
     if (!sexe) {
-      toast.error("Choisissez votre civilité");
+      alert('Veuillez sélectionner votre civilité');
       return false;
     }
     if (!dateNaissance) {
-      toast.error("Date de naissance requise");
+      alert('Veuillez entrer votre date de naissance');
       return false;
     }
     if (!numPassport) {
-      toast.error("Numéro de passeport requis");
+      alert('Veuillez entrer votre numéro de passeport');
       return false;
     }
     if (!dateExpPassport) {
-      toast.error("Date expiration passeport requise");
+      alert('Veuillez entrer la date d\'expiration de votre passeport');
       return false;
     }
-    if (!passportVerified) {
-      toast.error("Le passeport doit être vérifié");
-      return false;
-    }
-    for (const p of additionalPassengersList) {
-      if (
-        !p.firstName ||
-        !p.lastName ||
-        !p.birthDate ||
-        !p.passportNumber ||
-        !p.passportExpiry
-      ) {
-        toast.error("Remplissez tous les passagers supplémentaires");
+    
+    for (const passenger of additionalPassengersList) {
+      if (!passenger.firstName || !passenger.lastName || !passenger.birthDate || 
+          !passenger.passportNumber || !passenger.passportExpiry) {
+        alert('Veuillez remplir toutes les informations des passagers supplémentaires');
         return false;
       }
     }
+    
     return true;
   };
 
   const validatePayment = () => {
-    if (!paymentMethod) {
-      toast.error("Choisissez un mode de paiement");
-      return false;
-    }
-    if (!acceptedTerms) {
-      toast.error("Acceptez les conditions");
-      return false;
-    }
-    if (paymentMethod === "cib") {
-      const cardNumberClean = cardInfo.cardNumber.replace(/\s/g, "");
-      if (cardNumberClean.length < 16) {
-        toast.error("Numéro de carte invalide");
-        return false;
-      }
-      if (!cardInfo.cardHolder) {
-        toast.error("Nom du titulaire requis");
-        return false;
-      }
-      if (!cardInfo.expiryDate || cardInfo.expiryDate.length < 5) {
-        toast.error("Date expiration invalide");
-        return false;
-      }
-      if (!cardInfo.cvv || cardInfo.cvv.length < 3) {
-        toast.error("CVV invalide");
-        return false;
-      }
+    if (!paymentMethod) { alert('Veuillez sélectionner un mode de paiement'); return false; }
+    if (!acceptedTerms) { alert('Veuillez accepter les conditions d\'achat'); return false; }
+    if (paymentMethod === 'cib') {
+      const cardNumberClean = cardInfo.cardNumber.replace(/\s/g, '');
+      if (!cardInfo.cardNumber || cardNumberClean.length < 16) { alert('Veuillez entrer un numéro de carte valide'); return false; }
+      if (!cardInfo.cardHolder) { alert('Veuillez entrer le nom du titulaire'); return false; }
+      if (!cardInfo.expiryDate || cardInfo.expiryDate.length < 5) { alert('Veuillez entrer une date d\'expiration valide'); return false; }
+      if (!cardInfo.cvv || cardInfo.cvv.length < 3) { alert('Veuillez entrer un CVV valide'); return false; }
     }
     return true;
   };
 
   const nextStep = () => {
-    if (currentStep === 1) {
-      setCurrentStep(2);
-      window.scrollTo(0, 0);
-    } else if (currentStep === 2 && validatePassengerInfo()) {
-      setCurrentStep(3);
-      window.scrollTo(0, 0);
-    } else if (currentStep === 3 && validatePayment()) {
-      processPayment();
-    }
+    if (currentStep === 1) { setCurrentStep(2); window.scrollTo(0, 0); }
+    else if (currentStep === 2 && validatePassengerInfo()) { setCurrentStep(3); window.scrollTo(0, 0); }
+    else if (currentStep === 3 && validatePayment()) { processPayment(); }
   };
 
-  const prevStep = () => {
-    setCurrentStep(currentStep - 1);
-    window.scrollTo(0, 0);
-  };
-
-  const renderPaymentMethods = () => {
-    const methods = [
-      {
-        id: "cib",
-        label: "Carte CIB / Edahabia",
-        icon: FaCreditCard,
-        description: "Paiement sécurisé par carte bancaire",
-      },
-      {
-        id: "delivery",
-        label: "Paiement à la livraison",
-        icon: FaMoneyBill,
-        description: "Payez lors de la réception des billets",
-      },
-    ];
-    if (isAdmin)
-      methods.push({
-        id: "cash",
-        label: "Paiement en espèces",
-        icon: FaMoneyBill,
-        description: "Payez en espèces à notre agence",
-      });
-    return methods.map((method) => (
-      <label
-        key={method.id}
-        className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${paymentMethod === method.id ? "border-[#00C0E8] bg-[#00C0E8]/5 shadow-md" : "border-gray-200 hover:border-[#00C0E8]/50"}`}
-      >
-        <input
-          type="radio"
-          name="payment"
-          value={method.id}
-          checked={paymentMethod === method.id}
-          onChange={(e) => setPaymentMethod(e.target.value)}
-          className="w-4 h-4 text-[#00C0E8] mt-1"
-        />
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <method.icon className="text-gray-600" />
-            <span className="font-semibold text-gray-700">{method.label}</span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">{method.description}</p>
-        </div>
-      </label>
-    ));
-  };
+  const prevStep = () => { setCurrentStep(currentStep - 1); window.scrollTo(0, 0); };
 
   if (reservationComplete) {
     return (
-      <ConfirmationPage
-        reservationId={reservationId}
-        bookingResponse={bookingResponse}
-        isRoundTrip={isRoundTrip}
-      />
+      <div className="min-h-screen py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <ConfirmationPage 
+            reservationId={reservationId} 
+            bookingResponse={bookingResponse}
+            isRoundTrip={isRoundTrip}
+          />
+        </div>
+      </div>
     );
   }
 
@@ -772,33 +698,11 @@ export default function ReservationSystem({ reservationData }) {
     <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto mb-12 px-4">
         <div className="flex justify-center items-center gap-8">
-          <StepIndicator
-            number={1}
-            title="Vol"
-            icon="plane"
-            isActive={currentStep === 1}
-            isCompleted={currentStep > 1}
-          />
-          <div
-            className={`w-16 h-0.5 transition-all duration-300 ${currentStep > 1 ? "bg-green-500" : "bg-gray-200"}`}
-          />
-          <StepIndicator
-            number={2}
-            title="Passagers"
-            icon="user"
-            isActive={currentStep === 2}
-            isCompleted={currentStep > 2}
-          />
-          <div
-            className={`w-16 h-0.5 transition-all duration-300 ${currentStep > 2 ? "bg-green-500" : "bg-gray-200"}`}
-          />
-          <StepIndicator
-            number={3}
-            title="Paiement"
-            icon="card"
-            isActive={currentStep === 3}
-            isCompleted={currentStep > 3}
-          />
+          <StepIndicator number={1} title="Vol" icon="plane" isActive={currentStep === 1} isCompleted={currentStep > 1} />
+          <div className={`w-16 h-0.5 transition-all duration-300 ${currentStep > 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
+          <StepIndicator number={2} title="Passagers" icon="user" isActive={currentStep === 2} isCompleted={currentStep > 2} />
+          <div className={`w-16 h-0.5 transition-all duration-300 ${currentStep > 2 ? 'bg-green-500' : 'bg-gray-200'}`} />
+          <StepIndicator number={3} title="Paiement" icon="card" isActive={currentStep === 3} isCompleted={currentStep > 3} />
         </div>
       </div>
 
@@ -823,17 +727,10 @@ export default function ReservationSystem({ reservationData }) {
                   <MultiFlightDetailsCard segments={formattedFlight.segments} />
                 ) : (
                   <>
-                    <FlightDetailsCard
-                      flight={formattedFlight.outbound}
-                      type="outbound"
-                    />
-                    {formattedFlight.type === "roundtrip" &&
-                      formattedFlight.return && (
-                        <FlightDetailsCard
-                          flight={formattedFlight.return}
-                          type="return"
-                        />
-                      )}
+                    <FlightDetailsCard flight={formattedFlight.outbound} type="outbound" />
+                    {formattedFlight.type === 'roundtrip' && formattedFlight.return && (
+                      <FlightDetailsCard flight={formattedFlight.return} type="return" />
+                    )}
                   </>
                 )}
               </motion.div>
@@ -1056,7 +953,6 @@ export default function ReservationSystem({ reservationData }) {
                     </div>
                   </div>
                 </div>
-
                 {additionalPassengersCount > 0 && (
                   <>
                     <div className="flex items-center gap-2 mb-4">
@@ -1079,130 +975,129 @@ export default function ReservationSystem({ reservationData }) {
             )}
 
             {currentStep === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
+              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                 <div className="flex items-center gap-2 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-r from-[#00C0E8] to-[#0096b8] rounded-full"></div>
                   <h2 className="text-2xl font-bold text-gray-800">Paiement</h2>
                 </div>
+                
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                  <h3 className="font-semibold text-gray-800 mb-4">
-                    Mode de paiement *
-                  </h3>
-                  <div className="space-y-3 mb-6">{renderPaymentMethods()}</div>
-                  {paymentMethod === "cib" && (
+                  <h3 className="font-semibold text-gray-800 mb-4">Mode de paiement *</h3>
+                  
+                  <div className="space-y-3 mb-6">
+                    {[
+                      { id: 'cib', label: 'Carte CIB / Edahabia', icon: FaCreditCard, description: 'Paiement sécurisé par carte bancaire' },
+                      { id: 'delivery', label: 'Paiement à la livraison', icon: FaMoneyBill, description: 'Payez lors de la réception des billets' },
+                      { id: 'cash', label: 'Paiement en espèces', icon: FaMoneyBill, description: 'Payez en espèces à notre agence' }
+                    ].map((method) => (
+                      <label
+                        key={method.id}
+                        className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          paymentMethod === method.id
+                            ? 'border-[#00C0E8] bg-[#00C0E8]/5 shadow-md'
+                            : 'border-gray-200 hover:border-[#00C0E8]/50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          value={method.id}
+                          checked={paymentMethod === method.id}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          className="w-4 h-4 text-[#00C0E8] focus:ring-[#00C0E8] focus:ring-2 mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <method.icon className="text-gray-600" />
+                            <span className="font-semibold text-gray-700">{method.label}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{method.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  
+                  {paymentMethod === 'cib' && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-gray-50 rounded-xl p-6 mt-4"
                     >
                       <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <FaCreditCard className="text-[#00C0E8]" /> Informations
-                        de la carte
+                        <FaCreditCard className="text-[#00C0E8]" />
+                        Informations de la carte
                       </h4>
+                      
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Numéro de carte
-                          </label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Numéro de carte</label>
                           <input
                             type="text"
                             value={cardInfo.cardNumber}
-                            onChange={(e) =>
-                              handleCardInputChange(
-                                "cardNumber",
-                                e.target.value,
-                              )
-                            }
+                            onChange={(e) => handleCardInputChange('cardNumber', e.target.value)}
                             placeholder="1234 5678 9012 3456"
-                            className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none"
                             maxLength="19"
                           />
                         </div>
+                        
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Nom du titulaire
-                          </label>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Nom du titulaire</label>
                           <input
                             type="text"
                             value={cardInfo.cardHolder}
-                            onChange={(e) =>
-                              handleCardInputChange(
-                                "cardHolder",
-                                e.target.value,
-                              )
-                            }
+                            onChange={(e) => handleCardInputChange('cardHolder', e.target.value)}
                             placeholder="COMME SUR LA CARTE"
-                            className="w-full border border-gray-300 rounded-xl px-4 py-3 uppercase"
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none uppercase"
                           />
                         </div>
+                        
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Date d'expiration
-                            </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Date d'expiration</label>
                             <input
                               type="text"
                               value={cardInfo.expiryDate}
-                              onChange={(e) =>
-                                handleCardInputChange(
-                                  "expiryDate",
-                                  e.target.value,
-                                )
-                              }
+                              onChange={(e) => handleCardInputChange('expiryDate', e.target.value)}
                               placeholder="MM/YY"
-                              className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none"
                               maxLength="5"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              CVV
-                            </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">CVV</label>
                             <input
                               type="password"
                               value={cardInfo.cvv}
-                              onChange={(e) =>
-                                handleCardInputChange("cvv", e.target.value)
-                              }
+                              onChange={(e) => handleCardInputChange('cvv', e.target.value)}
                               placeholder="123"
-                              className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:border-[#00C0E8] focus:ring-2 focus:ring-[#00C0E8]/20 transition-all outline-none"
                               maxLength="4"
                             />
                           </div>
                         </div>
+                        
                         <div className="flex items-center gap-2 mt-4 p-3 bg-blue-50 rounded-lg">
                           <FaShieldAlt className="text-blue-500" />
-                          <p className="text-xs text-blue-700">
-                            Paiement 100% sécurisé. Vos informations bancaires
-                            sont cryptées.
-                          </p>
+                          <p className="text-xs text-blue-700">Paiement 100% sécurisé. Vos informations bancaires sont cryptées.</p>
                         </div>
                       </div>
                     </motion.div>
                   )}
+                  
                   <div className="border-t border-gray-200 pt-6 mt-6">
                     <label className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-all">
                       <input
                         type="checkbox"
                         checked={acceptedTerms}
                         onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="w-4 h-4 text-[#00C0E8] rounded mt-0.5"
+                        className="w-4 h-4 text-[#00C0E8] focus:ring-[#00C0E8] focus:ring-2 rounded mt-0.5"
                       />
                       <div>
                         <span className="text-gray-700">J'accepte les </span>
-                        <a href="#" className="text-[#00C0E8] hover:underline">
-                          conditions générales d'achat
-                        </a>
+                        <a href="#" className="text-[#00C0E8] hover:underline">conditions générales d'achat</a>
                         <span className="text-gray-700"> et la </span>
-                        <a href="#" className="text-[#00C0E8] hover:underline">
-                          politique de confidentialité
-                        </a>
+                        <a href="#" className="text-[#00C0E8] hover:underline">politique de confidentialité</a>
                       </div>
                     </label>
                   </div>
@@ -1210,90 +1105,244 @@ export default function ReservationSystem({ reservationData }) {
               </motion.div>
             )}
           </AnimatePresence>
-
+          
           <div className="flex justify-between mt-8">
             {currentStep > 1 && (
-              <button
-                onClick={prevStep}
-                className="flex items-center gap-2 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:border-[#00C0E8] hover:text-[#00C0E8] transition-all duration-300"
-              >
+              <button onClick={prevStep} className="flex items-center gap-2 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:border-[#00C0E8] hover:text-[#00C0E8] transition-all duration-300">
                 <FaChevronLeft /> Retour
               </button>
             )}
-            <button
-              onClick={nextStep}
-              disabled={isProcessing}
-              className={`flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#00C0E8] to-[#0096b8] text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 ${currentStep === 1 ? "ml-auto" : ""} ${isProcessing ? "opacity-70 cursor-not-allowed" : ""}`}
-            >
+            <button onClick={nextStep} disabled={isProcessing}
+              className={`flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#00C0E8] to-[#0096b8] text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 ${currentStep === 1 ? 'ml-auto' : ''} ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''}`}>
               {isProcessing ? (
-                <>
-                  <FaSpinner className="animate-spin" /> Traitement...
-                </>
+                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Traitement...</>
               ) : (
-                <>
-                  {currentStep === 3 ? "Payer " + getTotalPrice() : "Continuer"}{" "}
-                  <FaChevronRight />
-                </>
+                <>{currentStep === 3 ? 'Payer ' + getTotalPrice() : 'Continuer'} <FaChevronRight /></>
               )}
             </button>
           </div>
         </div>
-        <Sidebar
-          flight={formattedFlight}
-          isMulti={isMulti}
-          passengers={passengers}
-          getTotalPrice={getTotalPrice}
-        />
+        
+        <Sidebar flight={formattedFlight} isMulti={isMulti} passengers={passengers} getTotalPrice={getTotalPrice} />
       </div>
     </div>
   );
 }
 
-const ConfirmationPage = ({
-  reservationId,
-  bookingResponse,
-  flightDetails,
-  isRoundTrip,
-  passengers,
-  totalPrice,
-}) => {
+// ConfirmationPage component - Updated to call the download endpoint
+export const ConfirmationPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [reservationId, setReservationId] = useState(null);
+  const [pnr, setPnr] = useState('N/A');
+  const [status, setStatus] = useState('CONFIRMED');
+  const [paymentStatus, setPaymentStatus] = useState('COMPLETED');
+  const [totalPriceValue, setTotalPriceValue] = useState('0 DZD');
+  const [flightDetails, setFlightDetails] = useState(null);
+  const [passengers, setPassengers] = useState([]);
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const pnr =
-    bookingResponse?.pnr ||
-    bookingResponse?.amadeus_pnr ||
-    bookingResponse?.bookingCode ||
-    "N/A";
-  const status = bookingResponse?.status || "CONFIRMED";
-  const paymentStatus = bookingResponse?.payment_status || "COMPLETED";
-  const totalPriceValue = bookingResponse?.total_price || totalPrice || "0 DZD";
 
+  useEffect(() => {
+    const rid = sessionStorage.getItem('reservationId');
+    const storedBooking = sessionStorage.getItem('bookingResponse');
+
+    if (!rid) {
+      setLoading(false);
+      return;
+    }
+
+    setReservationId(rid);
+
+    // 1. Utiliser les données stockées si disponibles (rapide)
+    if (storedBooking) {
+      const booking = JSON.parse(storedBooking);
+      setPnr(booking.pnr || booking.amadeus_pnr || 'N/A');
+      setStatus(booking.status || 'CONFIRMED');
+      setPaymentStatus(booking.payment_status || 'COMPLETED');
+      setTotalPriceValue(booking.total_price || '0 DZD');
+    }
+
+    // 2. Appel à l'API pour obtenir les détails complets (vols, passagers, etc.)
+    axiosInstance.get(`/ms-reservation/reservations/${rid}/`)
+      .then(response => {
+        const data = response.data;
+
+        // Mettre à jour le prix total et le PNR si plus précis
+        if (data.total_price) {
+          setTotalPriceValue(`${data.total_price} ${data.currency || 'DZD'}`);
+        }
+        if (data.amadeus_pnr) {
+          setPnr(data.amadeus_pnr);
+        }
+        if (data.status) setStatus(data.status);
+        if (data.payment_status) setPaymentStatus(data.payment_status);
+
+        // Construire flightDetails à partir des segments
+        const segments = data.flight_segments || [];
+        if (segments.length > 0) {
+          const outbound = segments[0];
+          const returnSegment = segments[1];
+          setFlightDetails({
+            type: data.trip_type === 'ALLER_RETOUR' ? 'roundtrip' : 'oneway',
+            outbound: {
+              airline: outbound.flight_data?.airline,
+              flightNumber: outbound.flight_data?.flightNumber,
+              departure: {
+                airport: outbound.origin,
+                city: getCityFromAirport(outbound.origin),
+                date: outbound.departure_date,
+                time: outbound.departure_time,
+              },
+              arrival: {
+                airport: outbound.destination,
+                city: getCityFromAirport(outbound.destination),
+                date: outbound.arrival_date,
+                time: outbound.arrival_time,
+              },
+              duration: outbound.flight_data?.duration,
+            },
+            return: returnSegment ? {
+              airline: returnSegment.flight_data?.airline,
+              flightNumber: returnSegment.flight_data?.flightNumber,
+              departure: {
+                airport: returnSegment.origin,
+                city: getCityFromAirport(returnSegment.origin),
+                date: returnSegment.departure_date,
+                time: returnSegment.departure_time,
+              },
+              arrival: {
+                airport: returnSegment.destination,
+                city: getCityFromAirport(returnSegment.destination),
+                date: returnSegment.arrival_date,
+                time: returnSegment.arrival_time,
+              },
+            } : null,
+          });
+          setIsRoundTrip(data.trip_type === 'ALLER_RETOUR');
+        }
+
+        // Récupérer les passagers
+        const pass = data.passenger_reservations?.map(pr => pr.passenger) || [];
+        setPassengers(pass);
+      })
+      .catch(error => {
+        console.error('Erreur chargement réservation', error);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Téléchargement PDF (identique à l'original)
   const downloadTicket = async () => {
+    if (!reservationId) return;
     setIsGeneratingPDF(true);
     try {
       const response = await axiosInstance.get(
         `/ms-reservation/reservations/${reservationId}/ticket/download/`,
-        { responseType: "blob" },
+        { responseType: 'blob' }
       );
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute("download", `billet_${reservationId}_${pnr}.pdf`);
+      link.setAttribute('download', `billet_${reservationId}_${pnr}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Billet téléchargé avec succès");
+      toast.success('Billet téléchargé avec succès');
     } catch (error) {
-      toast.error("Erreur lors du téléchargement du billet");
+      console.error('Error downloading ticket:', error);
+      toast.error('Erreur lors du téléchargement du billet');
     } finally {
       setIsGeneratingPDF(false);
     }
   };
 
   const shareViaWhatsApp = () => {
-    const message = `*Confirmation de réservation* 🎫\n\n📋 Numéro: ${reservationId}\n🔖 Code PNR: ${pnr}\n✅ Statut: ${status}\n💰 Total: ${totalPriceValue}\n\nMerci de votre confiance ! ✈️`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    const message = `*Confirmation de réservation FlyExpress* 🎫\n\n` +
+      `📋 Numéro: ${reservationId}\n` +
+      `🔖 Code PNR: ${pnr}\n` +
+      `✅ Statut: ${status}\n` +
+      `💰 Total: ${totalPriceValue}\n\n` +
+      `Merci de votre confiance ! ✈️`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
+
+  const printTicket = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Billet d'avion - ${reservationId}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+          .ticket { max-width: 800px; margin: 0 auto; border: 2px solid #00C0E8; border-radius: 10px; overflow: hidden; }
+          .header { background: linear-gradient(135deg, #00C0E8, #0096b8); color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; }
+          .row { display: flex; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+          .label { flex: 1; font-weight: bold; color: #666; }
+          .value { flex: 2; color: #333; }
+          .flight-info { background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 15px 0; }
+          .footer { background: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #999; }
+          @media print { body { margin: 0; padding: 0; } .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="ticket">
+          <div class="header">
+            <h2>FlyExpress - Billet d'avion</h2>
+            <p>Confirmation de réservation</p>
+          </div>
+          <div class="content">
+            <div class="row"><div class="label">Numéro de réservation:</div><div class="value">${reservationId}</div></div>
+            <div class="row"><div class="label">Code PNR:</div><div class="value"><strong>${pnr}</strong></div></div>
+            <div class="row"><div class="label">Statut:</div><div class="value">${status}</div></div>
+            <div class="row"><div class="label">Paiement:</div><div class="value">${paymentStatus}</div></div>
+            <div class="row"><div class="label">Total payé:</div><div class="value"><strong>${totalPriceValue}</strong></div></div>
+            
+            <div class="flight-info">
+              <h3>Détails du vol</h3>
+              ${flightDetails?.type === 'multi' ? flightDetails.segments.map((seg, idx) => `
+                <div><strong>Segment ${idx+1}: ${seg.departure?.city || seg.departure?.airport} → ${seg.arrival?.city || seg.arrival?.airport}</strong><br>
+                Vol: ${seg.airline} ${seg.flightNumber}<br>
+                Départ: ${seg.departure?.date || 'N/A'} à ${seg.departure?.time || 'N/A'}<br>
+                Arrivée: ${seg.arrival?.date || 'N/A'} à ${seg.arrival?.time || 'N/A'}</div>
+              `).join('') : `
+                <div><strong>Aller:</strong> ${flightDetails?.outbound?.departure?.city || flightDetails?.outbound?.departure?.airport} → ${flightDetails?.outbound?.arrival?.city || flightDetails?.outbound?.arrival?.airport}</div>
+                <div>Date: ${flightDetails?.outbound?.departure?.date}</div>
+                <div>Départ: ${flightDetails?.outbound?.departure?.time} | Arrivée: ${flightDetails?.outbound?.arrival?.time}</div>
+                <div>Vol: ${flightDetails?.outbound?.airline} ${flightDetails?.outbound?.flightNumber}</div>
+                ${isRoundTrip && flightDetails?.return ? `
+                  <div style="margin-top:15px"><strong>Retour:</strong> ${flightDetails.return.departure?.city || flightDetails.return.departure?.airport} → ${flightDetails.return.arrival?.city || flightDetails.return.arrival?.airport}</div>
+                  <div>Date: ${flightDetails.return.departure?.date}</div>
+                  <div>Départ: ${flightDetails.return.departure?.time} | Arrivée: ${flightDetails.return.arrival?.time}</div>
+                  <div>Vol: ${flightDetails.return.airline} ${flightDetails.return.flightNumber}</div>
+                ` : ''}
+              `}
+            </div>
+
+            <div class="flight-info">
+              <h3>Passagers</h3>
+              ${passengers.length ? passengers.map((p, idx) => `<div>${idx+1}. ${p.prenom || p.firstName || ''} ${p.nom || p.lastName || ''}</div>`).join('') : '<div>1 passager</div>'}
+            </div>
+          </div>
+          <div class="footer">
+            <p>Merci d'avoir choisi FlyExpress! Présentez ce billet à l'embarquement.</p>
+            <p>Pour toute assistance, contactez-nous au +213 555 123 456</p>
+          </div>
+        </div>
+        <div class="no-print" style="text-align:center; margin-top:20px;">
+          <button onclick="window.print()" style="padding:10px 20px; background:#00C0E8; color:white; border:none; border-radius:5px; cursor:pointer;">Imprimer</button>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  if (loading) {
+    return <div className="text-center py-10">Chargement de votre confirmation...</div>;
+  }
 
   return (
     <motion.div
@@ -1306,69 +1355,80 @@ const ConfirmationPage = ({
         <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6">
           <FaCheck className="w-10 h-10 text-[#00C0E8]" />
         </div>
-        <h2 className="text-3xl font-bold text-[#00C0E8] mb-2">
-          Réservation Confirmée !
-        </h2>
-        <p className="text-cyan-600">
-          Votre réservation a été effectuée avec succès
-        </p>
+        <h2 className="text-3xl font-bold text-[#00C0E8] mb-2">Réservation Confirmée !</h2>
+        <p className="text-cyan-600">Votre réservation a été effectuée avec succès</p>
       </div>
+
       <div className="p-8">
+        {/* Résumé */}
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <p className="text-xs text-gray-500">Code PNR</p>
-              <p className="text-xl font-bold font-mono text-[#00C0E8]">
-                {pnr}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Statut</p>
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                <FaCheck className="w-3 h-3" /> {status}
-              </span>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Total payé</p>
-              <p className="text-xl font-bold text-gray-800">
-                {totalPriceValue}
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-9">
+            <div><p className="text-xs text-gray-500">Code PNR</p><p className="text-xl font-bold font-mono text-[#00C0E8]">{pnr}</p></div>
+            <div><p className="text-xs text-gray-500">Statut</p><span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold"><FaCheck className="w-3 h-3" /> {status}</span></div>
+            <div><p className="text-xs text-gray-500">Total payé</p><p className="text-xl font-bold text-gray-800">{totalPriceValue}</p></div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-4">
-          <button
-            onClick={downloadTicket}
-            disabled={isGeneratingPDF}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[#00C0E8] text-white rounded-xl font-semibold hover:bg-[#0096b8] transition-all disabled:opacity-50"
-          >
-            {isGeneratingPDF ? (
-              <>
-                <FaSpinner className="animate-spin" /> Génération...
-              </>
+
+        {/* Détails du vol */}
+        {flightDetails && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><FaPlane className="text-[#00C0E8]" /> Détails du vol</h3>
+            {flightDetails.type === 'multi' ? (
+              <div className="space-y-4">
+                {flightDetails.segments.map((segment, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex justify-between items-center mb-3"><div className="font-semibold">{segment.departure?.city || segment.departure?.airport} → {segment.arrival?.city || segment.arrival?.airport}</div><div className="text-sm text-gray-500">Vol {segment.airline} {segment.flightNumber}</div></div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><p className="text-gray-500">Départ</p><p className="font-semibold">{segment.departure?.date || 'N/A'} à {segment.departure?.time || 'N/A'}</p><p className="text-xs text-gray-500">{segment.departure?.airport}</p></div>
+                      <div><p className="text-gray-500">Arrivée</p><p className="font-semibold">{segment.arrival?.date || 'N/A'} à {segment.arrival?.time || 'N/A'}</p><p className="text-xs text-gray-500">{segment.arrival?.airport}</p></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <>
-                <FaDownload /> Télécharger PDF
-              </>
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-3"><div className="font-semibold">{flightDetails.outbound?.departure?.city || flightDetails.outbound?.departure?.airport} → {flightDetails.outbound?.arrival?.city || flightDetails.outbound?.arrival?.airport}</div><div className="text-sm text-gray-500">Vol {flightDetails.outbound?.airline} {flightDetails.outbound?.flightNumber}</div></div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><p className="text-gray-500">Départ</p><p className="font-semibold">{flightDetails.outbound?.departure?.date || 'N/A'} à {flightDetails.outbound?.departure?.time || 'N/A'}</p><p className="text-xs text-gray-500">{flightDetails.outbound?.departure?.airport}</p></div>
+                    <div><p className="text-gray-500">Arrivée</p><p className="font-semibold">{flightDetails.outbound?.arrival?.date || 'N/A'} à {flightDetails.outbound?.arrival?.time || 'N/A'}</p><p className="text-xs text-gray-500">{flightDetails.outbound?.arrival?.airport}</p></div>
+                  </div>
+                </div>
+                {isRoundTrip && flightDetails.return && (
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex justify-between items-center mb-3"><div className="font-semibold">{flightDetails.return.departure?.city || flightDetails.return.departure?.airport} → {flightDetails.return.arrival?.city || flightDetails.return.arrival?.airport}</div><div className="text-sm text-gray-500">Vol {flightDetails.return.airline} {flightDetails.return.flightNumber}</div></div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><p className="text-gray-500">Départ</p><p className="font-semibold">{flightDetails.return.departure?.date || 'N/A'} à {flightDetails.return.departure?.time || 'N/A'}</p><p className="text-xs text-gray-500">{flightDetails.return.departure?.airport}</p></div>
+                      <div><p className="text-gray-500">Arrivée</p><p className="font-semibold">{flightDetails.return.arrival?.date || 'N/A'} à {flightDetails.return.arrival?.time || 'N/A'}</p><p className="text-xs text-gray-500">{flightDetails.return.arrival?.airport}</p></div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
-          </button>
-          <button
-            onClick={shareViaWhatsApp}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-all"
-          >
-            <FaWhatsapp /> Partager
-          </button>
-        </div>
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <div className="flex items-start gap-2">
-            <FaInfoCircle className="text-blue-500 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <p className="font-semibold mb-1">Informations importantes:</p>
-              <p>✓ Présentez-vous à l'aéroport 2 heures avant le départ</p>
-              <p>✓ Munissez-vous de votre pièce d'identité et de ce billet</p>
-              <p>✓ Pour toute modification, contactez notre service client</p>
+          </div>
+        )}
+
+        {/* Passagers */}
+        {passengers.length > 0 && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><FaUser className="text-[#00C0E8]" /> Passagers ({passengers.length})</h3>
+            <div className="space-y-2">
+              {passengers.map((p, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-3"><div className="font-semibold">{p.prenom || p.firstName || ''} {p.nom || p.lastName || ''}</div>{p.num_passport && <div className="text-sm text-gray-500">Passeport: {p.num_passport}</div>}</div>
+              ))}
             </div>
           </div>
+        )}
+
+        {/* Boutons */}
+        <div className="flex flex-wrap gap-4">
+          <button onClick={printTicket} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:border-[#00C0E8] hover:text-[#00C0E8] transition-all"><FaPrint /> Imprimer le billet</button>
+          <button onClick={downloadTicket} disabled={isGeneratingPDF} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[#00C0E8] text-white rounded-xl font-semibold hover:bg-[#0096b8] transition-all disabled:opacity-50">{isGeneratingPDF ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Génération...</> : <><FaDownload /> Télécharger PDF</>}</button>
+          <button onClick={shareViaWhatsApp} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-all"><FaWhatsapp /> Partager</button>
+        </div>
+
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="flex items-start gap-2"><FaInfoCircle className="text-blue-500 mt-0.5" /><div className="text-sm text-blue-800"><p className="font-semibold mb-1">Informations importantes:</p><p>✓ Présentez-vous à l'aéroport 2 heures avant le départ</p><p>✓ Munissez-vous de votre pièce d'identité et de ce billet</p><p>✓ Pour toute modification, contactez notre service client</p></div></div>
         </div>
       </div>
     </motion.div>

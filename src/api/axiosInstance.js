@@ -27,8 +27,12 @@ const processQueue = (error, token = null) => {
 
 // Intercepteur pour ajouter le token aux requêtes
 axiosInstance.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
+    console.log('Making request to:', config.url);
+    console.log('Token exists:', !!token);
+    
     console.log('Making request to:', config.url);
     console.log('Token exists:', !!token);
     
@@ -37,17 +41,27 @@ axiosInstance.interceptors.request.use(
       console.log('Authorization header set');
     } else {
       console.warn('No access token found in localStorage');
+      console.log('Authorization header set');
+    } else {
+      console.warn('No access token found in localStorage');
     }
+    
     
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
 // Intercepteur pour rafraîchir le token en cas d'expiration
+axiosInstance.interceptors.response.use(
+  (response) => {
+    console.log('Response received:', response.status, response.config.url);
+    return response;
+  },
 axiosInstance.interceptors.response.use(
   (response) => {
     console.log('Response received:', response.status, response.config.url);
