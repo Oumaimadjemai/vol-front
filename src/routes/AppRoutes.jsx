@@ -1,3 +1,4 @@
+// routes/AppRoutes.js
 import { Routes, Route } from "react-router-dom";
 
 import AuthCallback from "../Components/authentication/AuthCallback";
@@ -8,6 +9,14 @@ import ResetPassword from "../Components/authentication/ConfirmPassword";
 import NotFound from "../Components/pages/NotFound";
 import Home from "../Components/pages/Voyageur/Home/Home";
 import LoginAdmin from "../Components/authentication/LoginAdmin";
+
+// New TravelHub Imports
+import TravelHubLanding from "../Components/pages/TravelHub/Landing";
+import Plans from "../Components/pages/TravelHub/Plans";
+import PaymentPage from "../Components/pages/TravelHub/PaymentPage";
+import RegistrationSuccess from "../Components/pages/TravelHub/RegistrationSuccess";
+import SuperAdminLogin from "../Components/pages/TravelHub/SuperAdminLogin";
+import SuperAdminDashboard from "../Components/pages/TravelHub/SuperAdminDashboard";
 
 import MainLayout from "../layouts/MainLayout";
 import AdminLayout from "../layouts/AdminLayout";
@@ -30,7 +39,15 @@ import { Analytics } from "../Components/pages/Admin/Analytics/Analytics";
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* SITE NORMAL */}
+      {/* TRAVELHUB ENTERPRISE ROUTES */}
+      <Route path="/travelhub" element={<TravelHubLanding />} />
+      <Route path="/travelhub/plans" element={<Plans />} />
+      <Route path="/travelhub/payment" element={<PaymentPage />} />
+      <Route path="/travelhub/success" element={<RegistrationSuccess />} />
+      <Route path="/travelhub/admin/login" element={<SuperAdminLogin />} />
+      <Route path="/travelhub/admin/dashboard" element={<SuperAdminDashboard />} />
+      
+      {/* SITE NORMAL - Agency Portal Routes */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -40,15 +57,12 @@ export default function AppRoutes() {
         <Route path="/reservation" element={<Reservation />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-
-        <Route
-          path="/reset-password/:uid/:token/"
-          element={<ResetPassword />}
-        />
+        <Route path="/reset-password/:uid/:token/" element={<ResetPassword />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
+      
+      {/* AGENCY ADMIN ROUTES */}
       <Route path="/admin/login" element={<LoginAdmin />} />
-      {/* ADMIN PROTECTED - COMMENTED OUT FOR NOW */}
       <Route element={<ProtectedAdmin />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Dashboard />} />

@@ -198,7 +198,19 @@ export default function DestinationAlbum() {
   }
 
   if (destinations.length === 0) {
-    return null;
+    return (
+      <>
+      <div className="mb-12 ml-5">
+        <h2 className="text-4xl font-semibold text-gray-900 mb-3 font-playfair ">
+          {t("destinations_title") || "Destinations Populaires"}
+        </h2>
+        <div className="w-20 h-1 bg-[#00C0E8] mb-4"></div>
+             </div>
+      <div className="text-center py-12 bg-gray-50  rounded-2xl mx-4">
+      <p className="text-gray-500">Aucune distination disponible pour le moment</p>
+      </div>
+      </>
+    );
   }
 
   return (
