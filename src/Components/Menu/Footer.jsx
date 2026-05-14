@@ -27,33 +27,33 @@ export default function Footer() {
                 href="https://facebook.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
+                className="w-10 h-10 rounded-full  flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
               >
-                <Facebook size={18} className="text-gray-400 group-hover:text-white" />
+                <Facebook size={18} className="text-blue-600 group-hover:text-white" />
               </a>
               <a 
                 href="https://twitter.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
+                className="w-10 h-10 rounded-full  flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
               >
-                <Twitter size={18} className="text-gray-400 group-hover:text-white" />
+                <Twitter size={18} className="text-sky-500 group-hover:text-white" />
               </a>
               <a 
                 href="https://instagram.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
               >
-                <Instagram size={18} className="text-gray-400 group-hover:text-white" />
+                <Instagram size={18} className="text-pink-500 group-hover:text-white" />
               </a>
               <a 
                 href="https://youtube.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
+                className="w-10 h-10 rounded-full  flex items-center justify-center hover:bg-[#00C0E8] transition-all duration-300 group"
               >
-                <Youtube size={18} className="text-gray-400 group-hover:text-white" />
+                <Youtube size={18} className="text-red-600 group-hover:text-white" />
               </a>
             </div>
           </div>

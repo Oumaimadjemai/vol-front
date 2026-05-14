@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaCheckCircle } from 'react-icons/fa';
 import axiosInstance from '../../api/axiosInstance';
-
+import { motion } from 'framer-motion';
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,7 +55,8 @@ export default function PaymentSuccess() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div 
+    className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
         <FaCheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Paiement réussi !</h1>

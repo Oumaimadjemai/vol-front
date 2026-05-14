@@ -1,7 +1,12 @@
-// ReservationSystem.jsx - Complete fixed version
+// ReservationSystem.jsx - Complete fixed version with PassportUploader integrated
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaChevronLeft, FaChevronRight, FaEnvelope, FaPhone, FaCreditCard, FaMoneyBill, FaShieldAlt, FaCheck, FaWhatsapp, FaDownload, FaPrint, FaUserEdit, FaTimes, FaSave, FaUser, FaIdCard, FaCalendarAlt, FaPassport, FaCamera, FaUpload, FaTrash, FaImage, FaInfoCircle, FaPlane } from 'react-icons/fa';
+import { 
+  FaChevronLeft, FaChevronRight, FaEnvelope, FaPhone, FaCreditCard, 
+  FaMoneyBill, FaShieldAlt, FaCheck, FaWhatsapp, FaDownload, FaPrint, 
+  FaUserEdit, FaTimes, FaSave, FaUser, FaIdCard, FaCalendarAlt, 
+  FaPassport, FaCamera, FaUpload, FaTrash, FaImage, FaInfoCircle, FaPlane 
+} from 'react-icons/fa';
 import { DatePicker } from './DatePicker';
 import { CustomSelect } from './CustomSelect';
 import { FlightDetailsCard } from './FlightDetailsCard';
@@ -9,10 +14,10 @@ import { MultiFlightDetailsCard } from './MultiFlightDetailsCard';
 import { StepIndicator } from './StepIndicator';
 import { Sidebar } from './Sidebar';
 import { PassengerFormComponent } from './PassengerFormComponent';
+import { PassportUploader } from './PassportUploader';
 import { WILAYAS, getCityFromAirport } from './constants/flightConstants';
 import axiosInstance from '../../../api/axiosInstance';
 import { toast } from 'sonner';
-
 
 export default function ReservationSystem({ reservationData }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -27,6 +32,7 @@ export default function ReservationSystem({ reservationData }) {
   const [dateExpPassport, setDateExpPassport] = useState('');
   const [passportPhoto, setPassportPhoto] = useState(null);
   const [passportPhotoPreview, setPassportPhotoPreview] = useState(null);
+  const [passportVerified, setPassportVerified] = useState(false);
   const [additionalPassengersList, setAdditionalPassengersList] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -40,8 +46,7 @@ export default function ReservationSystem({ reservationData }) {
   const [authenticatedUser, setAuthenticatedUser] = useState(null);
   const [voyageurId, setVoyageurId] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
+  const [passportUploadKey, setPassportUploadKey] = useState(0); // For resetting uploader
 
   const flight = reservationData?.flight;
   const isMulti = reservationData?.isMulti || false;
@@ -87,8 +92,11 @@ export default function ReservationSystem({ reservationData }) {
           setDateNaissance(voyageurData.date_naissance || '');
           setNumPassport(voyageurData.num_passport || '');
           setDateExpPassport(voyageurData.date_exp_passport || '');
+          
+          // Set passport photo preview if exists
           if (voyageurData.passport_photo) {
             setPassportPhotoPreview(voyageurData.passport_photo);
+            setPassportVerified(voyageurData.passport_verified || false);
           }
           
           return voyageurData;
@@ -142,101 +150,22 @@ export default function ReservationSystem({ reservationData }) {
     });
   }, []);
 
-  // Handle passport photo upload with drag and drop
-  const handlePhotoUpload = async (file) => {
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-      alert('Veuillez sélectionner une image (JPEG, PNG, etc.)');
-      return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La photo ne doit pas dépasser 5MB');
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPassportPhotoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-    
-    setPassportPhoto(file);
-    
-    if (voyageurId) {
-      await uploadPassportPhoto(file);
+  // Handle passport verification result from PassportUploader
+  const handlePassportVerified = (verified) => {
+    setPassportVerified(verified);
+    if (!verified) {
+      toast.error('Please upload a valid passport photo with clear MRZ data');
+    } else {
+      toast.success('Passport verified successfully!');
     }
   };
 
-  const uploadPassportPhoto = async (file) => {
-    if (!voyageurId) return;
-    
-    setIsUpdating(true);
-    try {
-      const formData = new FormData();
-      formData.append('passport_photo', file);
-      
-      const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      console.log('Photo uploaded successfully:', response.data);
-      alert('Photo du passeport mise à jour avec succès!');
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      alert('Erreur lors du téléchargement de la photo');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const removePhoto = async () => {
+  // Handle passport removal
+  const handlePassportRemoved = () => {
     setPassportPhoto(null);
     setPassportPhotoPreview(null);
-    
-    if (voyageurId) {
-      setIsUpdating(true);
-      try {
-        const response = await axiosInstance.patch(`/auth-service/auth/voyageurs/${voyageurId}/update/`, {
-          passport_photo: null
-        });
-        console.log('Photo removed:', response.data);
-        alert('Photo supprimée avec succès!');
-      } catch (error) {
-        console.error('Error removing photo:', error);
-      } finally {
-        setIsUpdating(false);
-      }
-    }
-  };
-
-  const handleDragEnter = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handlePhotoUpload(files[0]);
-    }
+    setPassportVerified(false);
+    setPassportUploadKey(prev => prev + 1); // Force re-render of uploader
   };
 
   const updateField = async (field, value) => {
@@ -285,7 +214,7 @@ export default function ReservationSystem({ reservationData }) {
       }
     } catch (error) {
       console.error(`Error updating ${field}:`, error);
-      alert(`Erreur lors de la mise à jour: ${error.response?.data?.message || error.message}`);
+      toast.error(`Erreur lors de la mise à jour: ${error.response?.data?.message || error.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -400,7 +329,17 @@ export default function ReservationSystem({ reservationData }) {
   };
 
   const formattedFlight = formatFlightDetails();
-  const getTotalPrice = () => formattedFlight.totalPrice.toLocaleString('fr-DZ') + ' DZD';
+  // const getTotalPrice = () => formattedFlight.totalPrice.toLocaleString('fr-DZ') + ' DZD';
+const getTotalPrice = () => {
+  const price = formattedFlight.totalPrice;
+  // Return formatted for display
+  return price.toLocaleString('fr-DZ') + ' DZD';
+};
+
+// Add a helper function to get the numeric price
+const getTotalPriceNumeric = () => {
+  return formattedFlight.totalPrice; // This returns the actual number
+};
 
   // Prepare passenger data for API
   const preparePassengerData = () => {
@@ -435,145 +374,145 @@ export default function ReservationSystem({ reservationData }) {
     }];
   };
 
- // Prepare selected flights for API
-const prepareSelectedFlights = () => {
-  // If we have flight data
-  if (flight) {
-    const flightData = {
-      flight_id: flight.id || '1',
-      airline: flight.airline,
-      flightNumber: flight.flightNumber,
-      departure: {
-        airport: flight.departure?.airport || searchParams?.from,
-        time: flight.departure?.time,
-        terminal: flight.departure?.terminal || ''
-      },
-      arrival: {
-        airport: flight.arrival?.airport || searchParams?.to,
-        time: flight.arrival?.time,
-        terminal: flight.arrival?.terminal || ''
-      },
-      duration: flight.duration,
-      price: {
-        total: flight.price?.total || formattedFlight.totalPrice,
-        currency: 'DZD',
-        perPassenger: (flight.price?.total || formattedFlight.totalPrice) / (passengers.adult + passengers.child)
-      },
-      baggage: { quantity: 1, included: "1 bagage(s)" },
-      refundable: { isRefundable: false, policy: "Non remboursable" },
-      seatsAvailable: 9,
-      segments: flight.segments || []
-    };
-    
-    // For round trip with return flight
-    if (isRoundTrip && flight.returnFlight) {
-      return [
-        flightData,
-        {
-          flight_id: flight.returnFlight.id || '2',
-          airline: flight.returnFlight.airline,
-          flightNumber: flight.returnFlight.flightNumber,
-          departure: {
-            airport: flight.returnFlight.departure?.airport || searchParams?.to,
-            time: flight.returnFlight.departure?.time,
-            terminal: flight.returnFlight.departure?.terminal || ''
-          },
-          arrival: {
-            airport: flight.returnFlight.arrival?.airport || searchParams?.from,
-            time: flight.returnFlight.arrival?.time,
-            terminal: flight.returnFlight.arrival?.terminal || ''
-          },
-          duration: flight.returnFlight.duration,
-          price: {
-            total: flight.returnFlight.price?.total || formattedFlight.totalPrice / 2,
-            currency: 'DZD',
-            perPassenger: (flight.returnFlight.price?.total || formattedFlight.totalPrice / 2) / (passengers.adult + passengers.child)
-          },
-          baggage: { quantity: 1, included: "1 bagage(s)" },
-          refundable: { isRefundable: false, policy: "Non remboursable" },
-          seatsAvailable: 7,
-          segments: flight.returnFlight.segments || []
-        }
-      ];
+  // Prepare selected flights for API
+  const prepareSelectedFlights = () => {
+    // If we have flight data
+    if (flight) {
+      const flightData = {
+        flight_id: flight.id || '1',
+        airline: flight.airline,
+        flightNumber: flight.flightNumber,
+        departure: {
+          airport: flight.departure?.airport || searchParams?.from,
+          time: flight.departure?.time,
+          terminal: flight.departure?.terminal || ''
+        },
+        arrival: {
+          airport: flight.arrival?.airport || searchParams?.to,
+          time: flight.arrival?.time,
+          terminal: flight.arrival?.terminal || ''
+        },
+        duration: flight.duration,
+        price: {
+          total: flight.price?.total || formattedFlight.totalPrice,
+          currency: 'DZD',
+          perPassenger: (flight.price?.total || formattedFlight.totalPrice) / (passengers.adult + passengers.child)
+        },
+        baggage: { quantity: 1, included: "1 bagage(s)" },
+        refundable: { isRefundable: false, policy: "Non remboursable" },
+        seatsAvailable: 9,
+        segments: flight.segments || []
+      };
+      
+      // For round trip with return flight
+      if (isRoundTrip && flight.returnFlight) {
+        return [
+          flightData,
+          {
+            flight_id: flight.returnFlight.id || '2',
+            airline: flight.returnFlight.airline,
+            flightNumber: flight.returnFlight.flightNumber,
+            departure: {
+              airport: flight.returnFlight.departure?.airport || searchParams?.to,
+              time: flight.returnFlight.departure?.time,
+              terminal: flight.returnFlight.departure?.terminal || ''
+            },
+            arrival: {
+              airport: flight.returnFlight.arrival?.airport || searchParams?.from,
+              time: flight.returnFlight.arrival?.time,
+              terminal: flight.returnFlight.arrival?.terminal || ''
+            },
+            duration: flight.returnFlight.duration,
+            price: {
+              total: flight.returnFlight.price?.total || formattedFlight.totalPrice / 2,
+              currency: 'DZD',
+              perPassenger: (flight.returnFlight.price?.total || formattedFlight.totalPrice / 2) / (passengers.adult + passengers.child)
+            },
+            baggage: { quantity: 1, included: "1 bagage(s)" },
+            refundable: { isRefundable: false, policy: "Non remboursable" },
+            seatsAvailable: 7,
+            segments: flight.returnFlight.segments || []
+          }
+        ];
+      }
+      
+      return [flightData];
     }
     
-    return [flightData];
-  }
-  
-  // Fallback: return empty array if no flight data
-  return [];
-};
-
- // Prepare reservation data for API
-const prepareReservationData = () => {
-  const tripType = isRoundTrip ? 'ALLER_RETOUR' : 'ALLER_SIMPLE';
-  
-  // Get origin and destination from multiple possible sources
-  let originCode = null;
-  let destinationCode = null;
-  
-  // Try to get from searchParams (using from/to or origin/destination)
-  if (searchParams) {
-    originCode = searchParams.from || searchParams.origin;
-    destinationCode = searchParams.to || searchParams.destination;
-  }
-  
-  // If still undefined, try to get from flight object
-  if (!originCode && flight) {
-    originCode = flight?.departure?.airport;
-  }
-  if (!destinationCode && flight) {
-    destinationCode = flight?.arrival?.airport;
-  }
-  
-  // If still undefined, try to get from selected_flights if already prepared
-  if (!originCode && flight?.segments?.length > 0) {
-    originCode = flight.segments[0]?.departure?.airport;
-    destinationCode = flight.segments[flight.segments.length - 1]?.arrival?.airport;
-  }
-  
-  console.log('Origin code from searchParams:', searchParams?.from || searchParams?.origin);
-  console.log('Destination code from searchParams:', searchParams?.to || searchParams?.destination);
-  console.log('Final origin:', originCode);
-  console.log('Final destination:', destinationCode);
-  
-  const searchParamsData = {
-    origin: originCode,
-    destination: destinationCode,
-    departureDate: searchParams?.departureDate,
-    adults: passengers.adult || 1,
-    children: passengers.child || 0,
-    infants: passengers.baby || 0,
-    travelClass: searchParams?.flightClass?.toUpperCase() || "ECONOMY"
+    // Fallback: return empty array if no flight data
+    return [];
   };
 
-  if (isRoundTrip && searchParams?.returnDate) {
-    searchParamsData.returnDate = searchParams.returnDate;
-  }
+  // Prepare reservation data for API
+  const prepareReservationData = () => {
+    const tripType = isRoundTrip ? 'ALLER_RETOUR' : 'ALLER_SIMPLE';
+    
+    // Get origin and destination from multiple possible sources
+    let originCode = null;
+    let destinationCode = null;
+    
+    // Try to get from searchParams (using from/to or origin/destination)
+    if (searchParams) {
+      originCode = searchParams.from || searchParams.origin;
+      destinationCode = searchParams.to || searchParams.destination;
+    }
+    
+    // If still undefined, try to get from flight object
+    if (!originCode && flight) {
+      originCode = flight?.departure?.airport;
+    }
+    if (!destinationCode && flight) {
+      destinationCode = flight?.arrival?.airport;
+    }
+    
+    // If still undefined, try to get from selected_flights if already prepared
+    if (!originCode && flight?.segments?.length > 0) {
+      originCode = flight.segments[0]?.departure?.airport;
+      destinationCode = flight.segments[flight.segments.length - 1]?.arrival?.airport;
+    }
+    
+    console.log('Origin code from searchParams:', searchParams?.from || searchParams?.origin);
+    console.log('Destination code from searchParams:', searchParams?.to || searchParams?.destination);
+    console.log('Final origin:', originCode);
+    console.log('Final destination:', destinationCode);
+    
+    const searchParamsData = {
+      origin: originCode,
+      destination: destinationCode,
+      departureDate: searchParams?.departureDate,
+      adults: passengers.adult || 1,
+      children: passengers.child || 0,
+      infants: passengers.baby || 0,
+      travelClass: searchParams?.flightClass?.toUpperCase() || "ECONOMY"
+    };
 
-  // Map payment method
-  let paymentMethodValue = '';
-  if (paymentMethod === 'cib') {
-    paymentMethodValue = 'CARD';
-  } else if (paymentMethod === 'delivery') {
-    paymentMethodValue = 'DELIVERY';
-  } else if (paymentMethod === 'cash') {
-    paymentMethodValue = 'CASH';
-  }
+    if (isRoundTrip && searchParams?.returnDate) {
+      searchParamsData.returnDate = searchParams.returnDate;
+    }
 
-  const reservationData = {
-    trip_type: tripType,
-    search_params: searchParamsData,
-    selected_flights: prepareSelectedFlights(),
-    passengers: preparePassengerData(),
-    existing_passenger_ids: [],
-    payment_method: paymentMethodValue
+    // Map payment method
+    let paymentMethodValue = '';
+    if (paymentMethod === 'cib') {
+      paymentMethodValue = 'CARD';
+    } else if (paymentMethod === 'delivery') {
+      paymentMethodValue = 'DELIVERY';
+    } else if (paymentMethod === 'cash') {
+      paymentMethodValue = 'CASH';
+    }
+
+    const reservationData = {
+      trip_type: tripType,
+      search_params: searchParamsData,
+      selected_flights: prepareSelectedFlights(),
+      passengers: preparePassengerData(),
+      existing_passenger_ids: [],
+      payment_method: paymentMethodValue
+    };
+    
+    console.log('Final reservation data:', reservationData);
+    
+    return reservationData;
   };
-  
-  console.log('Final reservation data:', reservationData);
-  
-  return reservationData;
-};
 
   // Create reservation
   const createReservation = async () => {
@@ -617,7 +556,57 @@ const prepareReservationData = () => {
     }
   };
 
- const processPayment = async () => {
+  // const processPayment = async () => {
+  //   setIsProcessing(true);
+  //   try {
+  //     const reservation = await createReservation();
+  //     const newReservationId = reservation.id;
+      
+  //     await confirmPrice(newReservationId);
+  //     const bookingResult = await bookReservation(newReservationId);
+      
+  //     const totalPriceValue = parseFloat(getTotalPrice().replace(' DZD', ''));
+      
+  //     // PAIEMENT POUR TOUTES LES MÉTHODES
+  //     let paymentMethodValue = '';
+      
+  //     if (paymentMethod === 'cib') paymentMethodValue = 'CIB';
+  //     else if (paymentMethod === 'cash') paymentMethodValue = 'CASH';
+  //     else if (paymentMethod === 'delivery') paymentMethodValue = 'DELIVERY';
+      
+  //     const paymentResponse = await axiosInstance.post('/ms-paiement/api/payments/create-payment', {
+  //       reservationId: newReservationId,
+  //       amount: totalPriceValue,
+  //       customerName: authenticatedUser?.nom || 'Client',
+  //       customerEmail: email,
+  //       paymentMethod: paymentMethodValue
+  //     });
+      
+  //     console.log('Payment response:', paymentResponse.data);
+      
+  //     sessionStorage.setItem('reservationId', newReservationId);
+  //     sessionStorage.setItem('bookingResponse', JSON.stringify(bookingResult));
+
+  //     if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
+  //       window.location.href = paymentResponse.data.paymentUrl;
+  //       return;
+  //     }
+      
+  //     // Pour CASH et DELIVERY, afficher confirmation
+  //     setBookingResponse(bookingResult);
+  //     setReservationId(newReservationId);
+  //     setReservationComplete(true);
+  //     setCurrentStep(4);
+  //     window.scrollTo(0, 0);
+      
+  //   } catch (error) {
+  //     console.error('Payment process failed:', error);
+  //     toast.error(`Erreur lors du traitement: ${error.response?.data?.message || error.message}`);
+  //   } finally {
+  //     setIsProcessing(false);
+  //   }
+  // };
+const processPayment = async () => {
   setIsProcessing(true);
   try {
     const reservation = await createReservation();
@@ -626,9 +615,16 @@ const prepareReservationData = () => {
     await confirmPrice(newReservationId);
     const bookingResult = await bookReservation(newReservationId);
     
-    const totalPriceValue = parseFloat(getTotalPrice().replace(' DZD', ''));
+    // ✅ FIXED: Get the numeric price correctly
+    const totalPriceValue = getTotalPriceNumeric(); // Returns the actual number like 23797.8
     
-    //  PAIEMENT POUR TOUTES LES MÉTHODES
+    // Make sure it's an integer (Chargily might expect integer)
+    const amountInCents = Math.round(totalPriceValue); // Or use totalPriceValue if decimals allowed
+    
+    console.log('💰 Total price value:', totalPriceValue);
+    console.log('💰 Amount to send:', amountInCents);
+    
+    // PAIEMENT POUR TOUTES LES MÉTHODES
     let paymentMethodValue = '';
     
     if (paymentMethod === 'cib') paymentMethodValue = 'CIB';
@@ -637,7 +633,7 @@ const prepareReservationData = () => {
     
     const paymentResponse = await axiosInstance.post('/ms-paiement/api/payments/create-payment', {
       reservationId: newReservationId,
-      amount: totalPriceValue,
+      amount: amountInCents, // Now sends the correct amount (23798 instead of 23)
       customerName: authenticatedUser?.nom || 'Client',
       customerEmail: email,
       paymentMethod: paymentMethodValue
@@ -648,10 +644,10 @@ const prepareReservationData = () => {
     sessionStorage.setItem('reservationId', newReservationId);
     sessionStorage.setItem('bookingResponse', JSON.stringify(bookingResult));
 
-if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
-  window.location.href = paymentResponse.data.paymentUrl;
-  return;
-}
+    if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
+      window.location.href = paymentResponse.data.paymentUrl;
+      return;
+    }
     
     // Pour CASH et DELIVERY, afficher confirmation
     setBookingResponse(bookingResult);
@@ -662,49 +658,52 @@ if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
     
   } catch (error) {
     console.error('Payment process failed:', error);
-    alert(`Erreur lors du traitement: ${error.response?.data?.message || error.message}`);
+    toast.error(`Erreur lors du traitement: ${error.response?.data?.message || error.message}`);
   } finally {
     setIsProcessing(false);
   }
 };
-
   const validatePassengerInfo = () => {
     if (!email || !phone || !wilaya || !commune) {
-      alert('Veuillez remplir toutes les coordonnées');
+      toast.error('Veuillez remplir toutes les coordonnées');
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      alert('Veuillez entrer une adresse email valide');
+      toast.error('Veuillez entrer une adresse email valide');
       return false;
     }
     const phoneRegex = /^[0-9]{9,10}$/;
     if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
-      alert('Veuillez entrer un numéro de téléphone valide');
+      toast.error('Veuillez entrer un numéro de téléphone valide');
       return false;
     }
     
     if (!sexe) {
-      alert('Veuillez sélectionner votre civilité');
+      toast.error('Veuillez sélectionner votre civilité');
       return false;
     }
     if (!dateNaissance) {
-      alert('Veuillez entrer votre date de naissance');
+      toast.error('Veuillez entrer votre date de naissance');
       return false;
     }
     if (!numPassport) {
-      alert('Veuillez entrer votre numéro de passeport');
+      toast.error('Veuillez entrer votre numéro de passeport');
       return false;
     }
     if (!dateExpPassport) {
-      alert('Veuillez entrer la date d\'expiration de votre passeport');
+      toast.error('Veuillez entrer la date d\'expiration de votre passeport');
+      return false;
+    }
+    if (!passportVerified) {
+      toast.error('Veuillez télécharger et vérifier votre photo de passeport');
       return false;
     }
     
     for (const passenger of additionalPassengersList) {
       if (!passenger.firstName || !passenger.lastName || !passenger.birthDate || 
           !passenger.passportNumber || !passenger.passportExpiry) {
-        alert('Veuillez remplir toutes les informations des passagers supplémentaires');
+        toast.error('Veuillez remplir toutes les informations des passagers supplémentaires');
         return false;
       }
     }
@@ -713,14 +712,14 @@ if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
   };
 
   const validatePayment = () => {
-    if (!paymentMethod) { alert('Veuillez sélectionner un mode de paiement'); return false; }
-    if (!acceptedTerms) { alert('Veuillez accepter les conditions d\'achat'); return false; }
+    if (!paymentMethod) { toast.error('Veuillez sélectionner un mode de paiement'); return false; }
+    if (!acceptedTerms) { toast.error('Veuillez accepter les conditions d\'achat'); return false; }
     if (paymentMethod === 'cib') {
       const cardNumberClean = cardInfo.cardNumber.replace(/\s/g, '');
-      if (!cardInfo.cardNumber || cardNumberClean.length < 16) { alert('Veuillez entrer un numéro de carte valide'); return false; }
-      if (!cardInfo.cardHolder) { alert('Veuillez entrer le nom du titulaire'); return false; }
-      if (!cardInfo.expiryDate || cardInfo.expiryDate.length < 5) { alert('Veuillez entrer une date d\'expiration valide'); return false; }
-      if (!cardInfo.cvv || cardInfo.cvv.length < 3) { alert('Veuillez entrer un CVV valide'); return false; }
+      if (!cardInfo.cardNumber || cardNumberClean.length < 16) { toast.error('Veuillez entrer un numéro de carte valide'); return false; }
+      if (!cardInfo.cardHolder) { toast.error('Veuillez entrer le nom du titulaire'); return false; }
+      if (!cardInfo.expiryDate || cardInfo.expiryDate.length < 5) { toast.error('Veuillez entrer une date d\'expiration valide'); return false; }
+      if (!cardInfo.cvv || cardInfo.cvv.length < 3) { toast.error('Veuillez entrer un CVV valide'); return false; }
     }
     return true;
   };
@@ -808,67 +807,22 @@ if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
                     <div className="mb-4 text-sm text-blue-600">Chargement de vos informations...</div>
                   )}
                   
-                  {authenticatedUser && (
+                  {authenticatedUser && !passportVerified && (
                     <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
                       ✓ Vos informations ont été automatiquement remplies
                     </div>
                   )}
                   
                   <div className="space-y-6">
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2">Photo du passeport</label>
-                      <div
-                        onDragEnter={handleDragEnter}
-                        onDragLeave={handleDragLeave}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-                          isDragging 
-                            ? 'border-[#00C0E8] bg-[#00C0E8]/10' 
-                            : passportPhotoPreview 
-                              ? 'border-green-500 bg-green-50'
-                              : 'border-gray-300 hover:border-[#00C0E8] hover:bg-[#00C0E8]/5'
-                        }`}
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handlePhotoUpload(e.target.files?.[0])}
-                          className="hidden"
-                        />
-                        
-                        {passportPhotoPreview ? (
-                          <div className="relative">
-                            <img 
-                              src={passportPhotoPreview} 
-                              alt="Aperçu du passeport" 
-                              className="max-h-32 mx-auto rounded-lg object-contain"
-                            />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removePhoto();
-                              }}
-                              className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
-                            >
-                              <FaTrash className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div>
-                            <FaCamera className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                            <p className="text-sm text-gray-600">
-                              Glissez-déposez une photo ou cliquez pour sélectionner
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              JPEG, PNG, GIF (max 5MB)
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    {/* PassportUploader Integration */}
+                    <PassportUploader
+                      key={passportUploadKey}
+                      voyageurId={voyageurId}
+                      initialPreview={passportPhotoPreview}
+                      initialVerified={passportVerified}
+                      onVerified={handlePassportVerified}
+                      onRemove={handlePassportRemoved}
+                    />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -1178,37 +1132,32 @@ if (paymentMethod === 'cib' && paymentResponse.data.paymentUrl) {
   );
 }
 
-// ConfirmationPage component - Updated to call the download endpoint
-export const ConfirmationPage = () => {
+// ConfirmationPage component (keep as is - unchanged)
+export const ConfirmationPage = ({ reservationId, bookingResponse, isRoundTrip }) => {
   const [loading, setLoading] = useState(true);
-  const [reservationId, setReservationId] = useState(null);
   const [pnr, setPnr] = useState('N/A');
   const [status, setStatus] = useState('CONFIRMED');
   const [paymentStatus, setPaymentStatus] = useState('COMPLETED');
   const [totalPriceValue, setTotalPriceValue] = useState('0 DZD');
   const [flightDetails, setFlightDetails] = useState(null);
   const [passengers, setPassengers] = useState([]);
-  const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
-    const rid = sessionStorage.getItem('reservationId');
-    const storedBooking = sessionStorage.getItem('bookingResponse');
+    const rid = reservationId || sessionStorage.getItem('reservationId');
+    const storedBooking = bookingResponse || JSON.parse(sessionStorage.getItem('bookingResponse') || 'null');
 
     if (!rid) {
       setLoading(false);
       return;
     }
 
-    setReservationId(rid);
-
     // 1. Utiliser les données stockées si disponibles (rapide)
     if (storedBooking) {
-      const booking = JSON.parse(storedBooking);
-      setPnr(booking.pnr || booking.amadeus_pnr || 'N/A');
-      setStatus(booking.status || 'CONFIRMED');
-      setPaymentStatus(booking.payment_status || 'COMPLETED');
-      setTotalPriceValue(booking.total_price || '0 DZD');
+      setPnr(storedBooking.pnr || storedBooking.amadeus_pnr || 'N/A');
+      setStatus(storedBooking.status || 'CONFIRMED');
+      setPaymentStatus(storedBooking.payment_status || 'COMPLETED');
+      setTotalPriceValue(storedBooking.total_price || '0 DZD');
     }
 
     // 2. Appel à l'API pour obtenir les détails complets (vols, passagers, etc.)
@@ -1267,7 +1216,6 @@ export const ConfirmationPage = () => {
               },
             } : null,
           });
-          setIsRoundTrip(data.trip_type === 'ALLER_RETOUR');
         }
 
         // Récupérer les passagers
@@ -1278,21 +1226,22 @@ export const ConfirmationPage = () => {
         console.error('Erreur chargement réservation', error);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [reservationId, bookingResponse]);
 
-  // Téléchargement PDF (identique à l'original)
+  // Téléchargement PDF
   const downloadTicket = async () => {
-    if (!reservationId) return;
+    const rid = reservationId || sessionStorage.getItem('reservationId');
+    if (!rid) return;
     setIsGeneratingPDF(true);
     try {
       const response = await axiosInstance.get(
-        `/ms-reservation/reservations/${reservationId}/ticket/download/`,
+        `/ms-reservation/reservations/${rid}/ticket/download/`,
         { responseType: 'blob' }
       );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `billet_${reservationId}_${pnr}.pdf`);
+      link.setAttribute('download', `billet_${rid}_${pnr}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1308,7 +1257,7 @@ export const ConfirmationPage = () => {
 
   const shareViaWhatsApp = () => {
     const message = `*Confirmation de réservation FlyExpress* 🎫\n\n` +
-      `📋 Numéro: ${reservationId}\n` +
+      `📋 Numéro: ${reservationId || sessionStorage.getItem('reservationId')}\n` +
       `🔖 Code PNR: ${pnr}\n` +
       `✅ Statut: ${status}\n` +
       `💰 Total: ${totalPriceValue}\n\n` +
@@ -1322,7 +1271,7 @@ export const ConfirmationPage = () => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Billet d'avion - ${reservationId}</title>
+        <title>Billet d'avion - ${reservationId || sessionStorage.getItem('reservationId')}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
           .ticket { max-width: 800px; margin: 0 auto; border: 2px solid #00C0E8; border-radius: 10px; overflow: hidden; }
@@ -1343,7 +1292,7 @@ export const ConfirmationPage = () => {
             <p>Confirmation de réservation</p>
           </div>
           <div class="content">
-            <div class="row"><div class="label">Numéro de réservation:</div><div class="value">${reservationId}</div></div>
+            <div class="row"><div class="label">Numéro de réservation:</div><div class="value">${reservationId || sessionStorage.getItem('reservationId')}</div></div>
             <div class="row"><div class="label">Code PNR:</div><div class="value"><strong>${pnr}</strong></div></div>
             <div class="row"><div class="label">Statut:</div><div class="value">${status}</div></div>
             <div class="row"><div class="label">Paiement:</div><div class="value">${paymentStatus}</div></div>
@@ -1351,7 +1300,7 @@ export const ConfirmationPage = () => {
             
             <div class="flight-info">
               <h3>Détails du vol</h3>
-              ${flightDetails?.type === 'multi' ? flightDetails.segments.map((seg, idx) => `
+              ${flightDetails?.type === 'multi' ? flightDetails.segments?.map((seg, idx) => `
                 <div><strong>Segment ${idx+1}: ${seg.departure?.city || seg.departure?.airport} → ${seg.arrival?.city || seg.arrival?.airport}</strong><br>
                 Vol: ${seg.airline} ${seg.flightNumber}<br>
                 Départ: ${seg.departure?.date || 'N/A'} à ${seg.departure?.time || 'N/A'}<br>
@@ -1398,7 +1347,7 @@ export const ConfirmationPage = () => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-white rounded-2xl shadow-xl overflow-hidden"
+      className="bg-white rounded-2xl shadow-xl overflow-hidden m-16"
     >
       <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-8 py-12 text-center">
         <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6">
@@ -1411,7 +1360,7 @@ export const ConfirmationPage = () => {
       <div className="p-8">
         {/* Résumé */}
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-9">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div><p className="text-xs text-gray-500">Code PNR</p><p className="text-xl font-bold font-mono text-[#00C0E8]">{pnr}</p></div>
             <div><p className="text-xs text-gray-500">Statut</p><span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold"><FaCheck className="w-3 h-3" /> {status}</span></div>
             <div><p className="text-xs text-gray-500">Total payé</p><p className="text-xl font-bold text-gray-800">{totalPriceValue}</p></div>
@@ -1424,7 +1373,7 @@ export const ConfirmationPage = () => {
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><FaPlane className="text-[#00C0E8]" /> Détails du vol</h3>
             {flightDetails.type === 'multi' ? (
               <div className="space-y-4">
-                {flightDetails.segments.map((segment, idx) => (
+                {flightDetails.segments?.map((segment, idx) => (
                   <div key={idx} className="bg-gray-50 rounded-xl p-4">
                     <div className="flex justify-between items-center mb-3"><div className="font-semibold">{segment.departure?.city || segment.departure?.airport} → {segment.arrival?.city || segment.arrival?.airport}</div><div className="text-sm text-gray-500">Vol {segment.airline} {segment.flightNumber}</div></div>
                     <div className="grid grid-cols-2 gap-4 text-sm">

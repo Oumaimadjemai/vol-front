@@ -10,13 +10,13 @@ import NotFound from "../Components/pages/NotFound";
 import Home from "../Components/pages/Voyageur/Home/Home";
 import LoginAdmin from "../Components/authentication/LoginAdmin";
 
-// New TravelHub Imports
-import TravelHubLanding from "../Components/pages/TravelHub/Landing";
-import Plans from "../Components/pages/TravelHub/Plans";
-import PaymentPage from "../Components/pages/TravelHub/PaymentPage";
-import RegistrationSuccess from "../Components/pages/TravelHub/RegistrationSuccess";
-import SuperAdminLogin from "../Components/pages/TravelHub/SuperAdminLogin";
-import SuperAdminDashboard from "../Components/pages/TravelHub/SuperAdminDashboard";
+// New TripHubDz Imports
+import TripHubDzLanding from "../Components/pages/TripHubDz/Landing";
+import Plans from "../Components/pages/TripHubDz/Plans";
+import PaymentPage from "../Components/pages/TripHubDz/PaymentPage";
+import RegistrationSuccess from "../Components/pages/TripHubDz/RegistrationSuccess";
+import SuperAdminLogin from "../Components/pages/TripHubDz/SuperAdminLogin";
+
 
 import MainLayout from "../layouts/MainLayout";
 import AdminLayout from "../layouts/AdminLayout";
@@ -39,16 +39,36 @@ import { Analytics } from "../Components/pages/Admin/Analytics/Analytics";
 import PaymentSuccess from "../Components/pages/PaymentSuccess";
 import PaymentCancel from "../Components/pages/PaymentCancel";
 import { ConfirmationPage } from '../Components/Vol/Reservation/ReservationSystem';
+import AgencySignup from "../Components/pages/TripHubDz/AgencySignup";
+import OTPVerification from "../Components/pages/TripHubDz/OTPVerification";
+import SuperAdminLayout from "../layouts/SuperAdminLayout";
+import Agencies from "../Components/pages/TripHubDz/Admin/Agencies";
+import Payments from "../Components/pages/TripHubDz/Admin/Payments";
+import Users from "../Components/pages/TripHubDz/Admin/Users";
+import SuperAnalytics from "../Components/pages/TripHubDz/Admin/Analytics";
+import SuperSettings from "../Components/pages/TripHubDz/Admin/Settings";
+import SuperAdminDashboard from "../Components/pages/TripHubDz/Admin/SuperAdminDashboard";
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* TRAVELHUB ENTERPRISE ROUTES */}
-      <Route path="/travelhub" element={<TravelHubLanding />} />
-      <Route path="/travelhub/plans" element={<Plans />} />
-      <Route path="/travelhub/payment" element={<PaymentPage />} />
-      <Route path="/travelhub/success" element={<RegistrationSuccess />} />
-      <Route path="/travelhub/admin/login" element={<SuperAdminLogin />} />
-      <Route path="/travelhub/admin/dashboard" element={<SuperAdminDashboard />} />
+      {/* TripHubDz ENTERPRISE ROUTES */}
+      <Route path="/TripHubDz/signup" element={<AgencySignup/>} />
+<Route path="/TripHubDz/verify-otp" element={<OTPVerification/>} />
+      <Route path="/TripHubDz" element={<TripHubDzLanding />} />
+      <Route path="/TripHubDz/plans" element={<Plans />} />
+      <Route path="/TripHubDz/payment" element={<PaymentPage />} />
+      <Route path="/TripHubDz/success" element={<RegistrationSuccess />} />
+      <Route path="/TripHubDz/admin/login" element={<SuperAdminLogin />} />
+      <Route element={<SuperAdminLayout/>}>
+       <Route path="/TripHubDz/admin/dashboard" element={<SuperAdminDashboard />} />
+       <Route path="/TripHubDz/admin/agencies" element={<Agencies />} />
+       <Route path="/TripHubDz/admin/payments" element={<Payments />} />
+       <Route path="/TripHubDz/admin/analytics" element={<SuperAnalytics />} />
+       <Route path="/TripHubDz/admin/users" element={<Users />} />
+       <Route path="/TripHubDz/admin/settings" element={<SuperSettings />} />
+       
+      </Route>
+     
       
       {/* SITE NORMAL - Agency Portal Routes */}
       <Route element={<MainLayout />}>

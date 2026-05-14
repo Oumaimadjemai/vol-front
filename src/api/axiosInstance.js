@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8080',  // Your gateway URL
+  baseURL: 'http://75.119.131.39:8080',  // Your gateway URL
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ axiosInstance.interceptors.response.use(
       try {
         console.log('Attempting to refresh token...');
         
-        const response = await axios.post('http://localhost:8080/auth-service/auth/refresh/', {
+        const response = await axios.post('http://127.0.0.1:8080/auth-service/auth/refresh/', {
           refresh: refreshToken
         });
         
