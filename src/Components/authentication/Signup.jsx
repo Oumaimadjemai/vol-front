@@ -47,7 +47,7 @@ export default function Signup({onSwitchToSignin,onSignupSuccess}) {
 };
 const handleGoogleSignup=()=>{
   window.location.href =
-  "http://127.0.0.1:8000/auth/accounts/google/login/?process=signup";
+  "http://75.119.131.39:8000/auth/accounts/google/login/?process=signup";
 }
 
   return (

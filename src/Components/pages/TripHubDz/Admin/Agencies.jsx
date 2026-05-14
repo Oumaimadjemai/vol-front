@@ -151,7 +151,7 @@ export default function Agencies() {
                 <button onClick={() => handleStatusChange(agency.id, agency.status === 'active' ? 'suspended' : 'active')} className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${agency.status === 'active' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
                   {agency.status === 'active' ? 'Suspendre' : 'Activer'}
                 </button>
-                <a href={`http://${agency.subdomain}.127.0.0.1:3000`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-medium text-center hover:bg-gray-200 transition">Visiter</a>
+                <a href={`http://${agency.subdomain}.75.119.131.39:3000`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-gray-100 text-gray-700 py-1.5 rounded-lg text-xs font-medium text-center hover:bg-gray-200 transition">Visiter</a>
               </div>
             </div>
           </motion.div>

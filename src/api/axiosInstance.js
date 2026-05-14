@@ -95,7 +95,7 @@ axiosInstance.interceptors.response.use(
       try {
         console.log('Attempting to refresh token...');
         
-        const response = await axios.post('http://127.0.0.1:8080/auth-service/auth/refresh/', {
+        const response = await axios.post('http://75.119.131.39:8080/auth-service/auth/refresh/', {
           refresh: refreshToken
         });
         

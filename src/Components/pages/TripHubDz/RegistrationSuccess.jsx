@@ -163,7 +163,7 @@ export default function RegistrationSuccess() {
                       {copied ? 'Copié !' : 'Copier'}
                     </button>
                     <a
-                      href={`http://${subdomain}.127.0.0.1:3000`}
+                      href={`http://${subdomain}.75.119.131.39:3000`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-3 py-1.5 bg-[#00c0e8] text-white rounded-lg hover:bg-[#0088a8] transition-all duration-300 text-sm font-medium"
@@ -219,7 +219,7 @@ export default function RegistrationSuccess() {
               className="space-y-3"
             >
               <a
-                href={`http://${subdomain}.127.0.0.1:3000`}
+                href={`http://${subdomain}.75.119.131.39:3000`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-[#00c0e8] to-[#0088a8] text-white py-3 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 group"

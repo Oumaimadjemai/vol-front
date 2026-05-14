@@ -66,7 +66,7 @@ const {t}=useTranslation();
 
   const handleGoogleLogin = () => {
     window.location.href =
-      "http://127.0.0.1:8000/auth/accounts/google/login/?process=signup";
+      "http://75.119.131.39:8000/auth/accounts/google/login/?process=signup";
   };
 
   const handleKeyPress = (e) => {
